@@ -51,3 +51,12 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# macOS-specific files and directories to ignore
+.DS_Store
+.AppleDouble/
+__MACOSX/
+
+# Remove dotnet normal build
+bin/
+obj/

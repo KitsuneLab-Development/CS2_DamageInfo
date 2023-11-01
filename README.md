@@ -1,7 +1,7 @@
 <font face = "Trebuchet MS">
 <div align="center">
     <h2>CS2 Damage Info</h2>
-    <p>CS2 server extension that displays the amount of damage players have inflicted on the victim's HP and Armor, as well as the hit groups they have hit. The plugin runs on <a href="https://github.com/K4ryuu/CS2_DamageInfo/releases](https://github.com/roflmuffin/CounterStrikeSharp)">CounterStrikeSharp</a>, so you have to install that and put the folder inside build, to your plugins folder for CounterStrikeSharp.</p>
+    <p>CS2 server extension that displays the amount of damage players have inflicted on the victim's HP and Armor, as well as the hit groups they have hit. The plugin runs on <a href="https://github.com/roflmuffin/CounterStrikeSharp">CounterStrikeSharp</a>, so you have to install that and put the folder inside build, to your plugins folder for CounterStrikeSharp.</p>
     <b>
         <a href="https://github.com/K4ryuu/CS2_DamageInfo/releases">Download</a>
         ·

@@ -60,3 +60,4 @@ __MACOSX/
 # Remove dotnet normal build
 bin/
 obj/
+*.sln

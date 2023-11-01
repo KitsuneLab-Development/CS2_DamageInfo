@@ -12,6 +12,6 @@
     <br/>
     <b>Do not forget to give a ⭐ on the projects!</b><br/><br/>
     <b>Love the project? Please consider donating to help it improve!</b><br/>
-    <b>PayPal:</b> paypal@kitsune-lab.dev
+    <b>PayPal:</b> k4ryuu@icloud.com
 </div>
 </font>

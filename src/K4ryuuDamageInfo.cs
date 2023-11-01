@@ -6,7 +6,7 @@ namespace K4ryuuDamageInfo
 	public class DamageInfoPlugin : BasePlugin
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "0.0.1";
+		public override string ModuleVersion => "1.0.0";
 
 		private Dictionary<CCSPlayerController, DamageData> playerDamageData = new Dictionary<CCSPlayerController, DamageData>();
 

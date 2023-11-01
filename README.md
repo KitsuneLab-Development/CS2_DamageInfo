@@ -1,23 +1,17 @@
 <font face = "Trebuchet MS">
 <div align="center">
-    <h2 align="center">Project Title</h2>
-    <p align="center">Project Description</p>
+    <h2>CS2 Damage Info</h2>
+    <p>CS2 server extension that displays the amount of damage players have inflicted on the victim's HP and Armor, as well as the hit groups they have hit. The plugin runs on <a href="https://github.com/K4ryuu/CS2_DamageInfo/releases](https://github.com/roflmuffin/CounterStrikeSharp)">CounterStrikeSharp</a>, so you have to install that and put the folder inside build, to your plugins folder for CounterStrikeSharp.</p>
     <b>
-        <a href="https://github.com/K4ryuu/Project_Template/releases">Download</a>
+        <a href="https://github.com/K4ryuu/CS2_DamageInfo/releases">Download</a>
         ·
-        <a href="https://github.com/K4ryuu/Project_Template/issues">Report Bug</a>
+        <a href="https://github.com/K4ryuu/CS2_DamageInfo/issues">Report Bug</a>
         ·
-        <a href="https://github.com/K4ryuu/Project_Template/issues">Request Feature</a>
+        <a href="https://github.com/K4ryuu/CS2_DamageInfo/issues">Request Feature</a>
     </b>
     <br/>
     <b>Do not forget to give a ⭐ on the projects!</b><br/><br/>
     <b>Love the project? Please consider donating to help it improve!</b><br/>
-    <b>PayPal:</b> paypal@kitsune-lab.dev<br/>
-    <b>Patreon:</b> https://www.patreon.com/kitsunelab
+    <b>PayPal:</b> paypal@kitsune-lab.dev
 </div>
-
-<p align="center">
-    <img width="300px" href="https://github.com/Kitsune-Lab" src="https://kitsune-lab.dev/storage/images/kl-logo.webp" align="center" alt="KitsuneLogo"/>
-</p>
-
 </font>

@@ -62,7 +62,7 @@ internal class CFG
 			foreach (FieldInfo field in typeof(ChatColors).GetFields())
 			{
 				string pattern = $"{{{field.Name}}}";
-				if (msg.Contains(pattern))
+				if (msg.Contains(pattern, StringComparison.OrdinalIgnoreCase))
 				{
 					modifiedValue = modifiedValue.Replace(pattern, field.GetValue(null).ToString());
 				}
@@ -70,7 +70,7 @@ internal class CFG
 			return modifiedValue;
 		}
 
-		return string.IsNullOrEmpty(msg) ? "[SimpleRanks]" : msg;
+		return string.IsNullOrEmpty(msg) ? "[DamageInfo]" : msg;
 	}
 }
 

@@ -70,7 +70,7 @@ internal class CFG
 			return modifiedValue;
 		}
 
-		return string.IsNullOrEmpty(msg) ? "[SimpleRanks]" : msg;
+		return string.IsNullOrEmpty(msg) ? "[DamageInfo]" : msg;
 	}
 }
 

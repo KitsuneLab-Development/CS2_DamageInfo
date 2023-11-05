@@ -16,30 +16,16 @@ internal class CFG
 		{
 			CreateAndWriteFile(path);
 		}
-		else
+
+		using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+		using (StreamReader sr = new StreamReader(fs))
 		{
-			using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
-			using (StreamReader sr = new StreamReader(fs))
-			{
-				// Deserialize the JSON from the file and load the configuration.
-				config = JsonSerializer.Deserialize<Config>(sr.ReadToEnd())!;
-			}
-
-			if (config != null && config.ChatPrefix != null)
-				config.ChatPrefix = ModifiedChatPrefix(config.ChatPrefix);
-
-			// Check if the FFAMode is missing in the loaded configuration
-			if (config!.FFAMode == default)
-			{
-				config.FFAMode = false;
-				// Serialize the updated configuration and write it back to the file
-				string jsonConfig = JsonSerializer.Serialize(config, new JsonSerializerOptions()
-				{
-					WriteIndented = true
-				});
-				File.WriteAllText(path, jsonConfig);
-			}
+			// Deserialize the JSON from the file and load the configuration.
+			config = JsonSerializer.Deserialize<Config>(sr.ReadToEnd())!;
 		}
+
+		if (config != null && config.ChatPrefix != null)
+			config.ChatPrefix = ModifiedChatPrefix(config.ChatPrefix);
 	}
 
 	private static void CreateAndWriteFile(string path)

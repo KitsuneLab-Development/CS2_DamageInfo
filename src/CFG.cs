@@ -16,16 +16,30 @@ internal class CFG
 		{
 			CreateAndWriteFile(path);
 		}
-
-		using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
-		using (StreamReader sr = new StreamReader(fs))
+		else
 		{
-			// Deserialize the JSON from the file and load the configuration.
-			config = JsonSerializer.Deserialize<Config>(sr.ReadToEnd());
-		}
+			using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+			using (StreamReader sr = new StreamReader(fs))
+			{
+				// Deserialize the JSON from the file and load the configuration.
+				config = JsonSerializer.Deserialize<Config>(sr.ReadToEnd())!;
+			}
 
-		if (config != null && config.ChatPrefix != null)
-			config.ChatPrefix = ModifiedChatPrefix(config.ChatPrefix);
+			if (config != null && config.ChatPrefix != null)
+				config.ChatPrefix = ModifiedChatPrefix(config.ChatPrefix);
+
+			// Check if the FFAMode is missing in the loaded configuration
+			if (config!.FFAMode == default)
+			{
+				config.FFAMode = false;
+				// Serialize the updated configuration and write it back to the file
+				string jsonConfig = JsonSerializer.Serialize(config, new JsonSerializerOptions()
+				{
+					WriteIndented = true
+				});
+				File.WriteAllText(path, jsonConfig);
+			}
+		}
 	}
 
 	private static void CreateAndWriteFile(string path)
@@ -43,6 +57,7 @@ internal class CFG
 			ChatPrefix = "{Green}[DamageInfo]",
 			CenterPrint = true,
 			RoundEndPrint = true,
+			FFAMode = false,
 		};
 
 		// Serialize the config object to JSON and write it to the file.
@@ -64,7 +79,7 @@ internal class CFG
 				string pattern = $"{{{field.Name}}}";
 				if (msg.Contains(pattern, StringComparison.OrdinalIgnoreCase))
 				{
-					modifiedValue = modifiedValue.Replace(pattern, field.GetValue(null).ToString());
+					modifiedValue = modifiedValue.Replace(pattern, field.GetValue(null)!.ToString());
 				}
 			}
 			return modifiedValue;
@@ -79,5 +94,6 @@ internal class Config
 	public string? ChatPrefix { get; set; }
 	public bool CenterPrint { get; set; }
 	public bool RoundEndPrint { get; set; }
+	public bool FFAMode { get; set; }
 
 }

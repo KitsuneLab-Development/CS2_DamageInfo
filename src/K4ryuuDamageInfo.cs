@@ -25,32 +25,35 @@ namespace K4ryuuDamageInfo
 
 				if (attackerController.IsValid && (@event.DmgHealth > 0 || @event.DmgArmor > 0))
 				{
-					if (CFG.config.RoundEndPrint)
+					if (@event.Userid.TeamNum != attackerController.TeamNum || CFG.config.FFAMode)
 					{
-						int attackerId = attackerController.UserId ?? -1;
-
-						if (!playerDamageInfo.ContainsKey(attackerId))
+						if (CFG.config.RoundEndPrint)
 						{
-							playerDamageInfo[attackerId] = new Dictionary<int, DamagePlayerInfo>();
+							int attackerId = attackerController.UserId ?? -1;
+
+							if (!playerDamageInfo.ContainsKey(attackerId))
+							{
+								playerDamageInfo[attackerId] = new Dictionary<int, DamagePlayerInfo>();
+							}
+
+							if (!playerDamageInfo[attackerId].ContainsKey(targetId))
+							{
+								playerDamageInfo[attackerId][targetId] = new DamagePlayerInfo();
+							}
+
+							playerDamageInfo[attackerId][targetId].DamageHP += @event.DmgHealth;
+							playerDamageInfo[attackerId][targetId].Hits++;
 						}
 
-						if (!playerDamageInfo[attackerId].ContainsKey(targetId))
+						if (CFG.config.CenterPrint)
 						{
-							playerDamageInfo[attackerId][targetId] = new DamagePlayerInfo();
+							if (!playerDamageData.ContainsKey(attackerController))
+							{
+								playerDamageData[attackerController] = new DamageData();
+							}
+
+							playerDamageData[attackerController].UpdateDamage(attackerController, targetId, @event.DmgHealth, @event.DmgArmor, @event.Hitgroup);
 						}
-
-						playerDamageInfo[attackerId][targetId].DamageHP += @event.DmgHealth;
-						playerDamageInfo[attackerId][targetId].Hits++;
-					}
-
-					if (CFG.config.CenterPrint)
-					{
-						if (!playerDamageData.ContainsKey(attackerController))
-						{
-							playerDamageData[attackerController] = new DamageData();
-						}
-
-						playerDamageData[attackerController].UpdateDamage(attackerController, targetId, @event.DmgHealth, @event.DmgArmor, @event.Hitgroup);
 					}
 				}
 
@@ -96,8 +99,8 @@ namespace K4ryuuDamageInfo
 							CCSPlayerController attackerController = Utilities.GetPlayerFromUserid(attackerId);
 							CCSPlayerController targetController = Utilities.GetPlayerFromUserid(targetId);
 
-							attackerController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageGiven} / {hitsGiven}] From: [{damageTaken} / {hitsTaken}] - {targetController.PlayerName} -- ({targetController.Health} hp)");
-							targetController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageTaken} / {hitsTaken}] From: [{damageGiven} / {hitsGiven}] - {attackerController.PlayerName} -- ({attackerController.Health} hp)");
+							attackerController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageGiven} / {hitsGiven}] From: [{damageTaken} / {hitsTaken}] - {targetController.PlayerName} -- ({targetController.PawnHealth} hp)");
+							targetController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageTaken} / {hitsTaken}] From: [{damageGiven} / {hitsGiven}] - {attackerController.PlayerName} -- ({attackerController.PawnHealth} hp)");
 
 							// Mark this pair as processed to avoid duplicates.
 							processedPairs.Add(new Tuple<int, int>(attackerId, targetId));

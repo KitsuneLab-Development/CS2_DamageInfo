@@ -6,8 +6,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="CounterStrikeSharp.API">
-      <HintPath>../../GlobalUsage/CounterStrikeSharp.API.dll</HintPath>
-    </Reference>
+    <Reference Include="CounterStrikeSharp.API" />
   </ItemGroup>
 </Project>

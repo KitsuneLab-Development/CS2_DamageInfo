@@ -99,8 +99,8 @@ namespace K4ryuuDamageInfo
 							CCSPlayerController attackerController = Utilities.GetPlayerFromUserid(attackerId);
 							CCSPlayerController targetController = Utilities.GetPlayerFromUserid(targetId);
 
-							attackerController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageGiven} / {hitsGiven}] From: [{damageTaken} / {hitsTaken}] - {targetController.PlayerName} -- ({targetController.PawnHealth} hp)");
-							targetController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageTaken} / {hitsTaken}] From: [{damageGiven} / {hitsGiven}] - {attackerController.PlayerName} -- ({attackerController.PawnHealth} hp)");
+							attackerController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageGiven} / {hitsGiven}] From: [{damageTaken} / {hitsTaken}] - {targetController.PlayerName} -- ({targetController.PlayerPawn.Value.Health} hp)");
+							targetController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageTaken} / {hitsTaken}] From: [{damageGiven} / {hitsGiven}] - {attackerController.PlayerName} -- ({attackerController.PlayerPawn.Value.Health} hp)");
 
 							// Mark this pair as processed to avoid duplicates.
 							processedPairs.Add(new Tuple<int, int>(attackerId, targetId));

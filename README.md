@@ -47,7 +47,7 @@
     <li>
         <a href="#usage">Usage</a>
         <ul>
-            <li><a href="#prerequisites">Commands</a></li>
+            <li><a href="#commands">Commands</a></li>
             <li><a href="#console-variables-(convars)">ConVars</a></li>
       </ul>
     </li>

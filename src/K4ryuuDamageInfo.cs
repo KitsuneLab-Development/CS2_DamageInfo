@@ -1,11 +1,13 @@
 ﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Utils;
 
 namespace K4ryuuDamageInfo
 {
+	[MinimumApiVersion(5)]
 	public class DamageInfoPlugin : BasePlugin
 	{
 		public override string ModuleName => "Damage Info";
@@ -133,7 +135,7 @@ namespace K4ryuuDamageInfo
 			damageInfo[targetId].DamageHP += damageHP;
 			damageInfo[targetId].DamageArmor += damageArmor;
 
-			if (damageHP > 350)
+			if (damageHP > 200)
 			{
 				attackerController.PrintToCenter($"Damage Given:\nHP {damageInfo[targetId].DamageHP} | HitGroup: {HitGroupToString(Hitgroup)}");
 			}

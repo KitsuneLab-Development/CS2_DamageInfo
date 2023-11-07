@@ -11,7 +11,7 @@ namespace K4ryuuDamageInfo
 	public class DamageInfoPlugin : BasePlugin
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "1.2.0";
+		public override string ModuleVersion => "1.3.0";
 		public override string ModuleAuthor => "K4ryuu";
 		private Dictionary<CCSPlayerController, DamageData> playerDamageData = new Dictionary<CCSPlayerController, DamageData>();
 		public Dictionary<int, Dictionary<int, DamagePlayerInfo>> playerDamageInfo = new Dictionary<int, Dictionary<int, DamagePlayerInfo>>();
@@ -101,8 +101,11 @@ namespace K4ryuuDamageInfo
 							CCSPlayerController attackerController = Utilities.GetPlayerFromUserid(attackerId);
 							CCSPlayerController targetController = Utilities.GetPlayerFromUserid(targetId);
 
-							attackerController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageGiven} / {hitsGiven}] From: [{damageTaken} / {hitsTaken}] - {targetController.PlayerName} -- ({targetController.PlayerPawn.Value.Health} hp)");
-							targetController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageTaken} / {hitsTaken}] From: [{damageGiven} / {hitsGiven}] - {attackerController.PlayerName} -- ({attackerController.PlayerPawn.Value.Health} hp)");
+							int attackerHP = attackerController.PlayerPawn.Value.Health < 0 ? 0 : attackerController.PlayerPawn.Value.Health;
+							int targetHP = targetController.PlayerPawn.Value.Health < 0 ? 0 : targetController.PlayerPawn.Value.Health;
+
+							attackerController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageGiven} / {hitsGiven}] From: [{damageTaken} / {hitsTaken}] - {targetController.PlayerName} -- ({targetHP} hp)");
+							targetController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageTaken} / {hitsTaken}] From: [{damageGiven} / {hitsGiven}] - {attackerController.PlayerName} -- ({attackerHP} hp)");
 
 							// Mark this pair as processed to avoid duplicates.
 							processedPairs.Add(new Tuple<int, int>(attackerId, targetId));

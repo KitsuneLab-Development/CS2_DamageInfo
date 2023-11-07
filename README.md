@@ -126,8 +126,7 @@ The addon provides several commands and console variables (convars) to customize
 
 ### Commands
 
-- **!rank** - Check the current rank and points
-- **!ranktop** - Check the top 5 players by points
+None
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

@@ -101,11 +101,29 @@ namespace K4ryuuDamageInfo
 							CCSPlayerController attackerController = Utilities.GetPlayerFromUserid(attackerId);
 							CCSPlayerController targetController = Utilities.GetPlayerFromUserid(targetId);
 
-							int attackerHP = attackerController.PlayerPawn.Value.Health < 0 ? 0 : attackerController.PlayerPawn.Value.Health;
-							int targetHP = targetController.PlayerPawn.Value.Health < 0 ? 0 : targetController.PlayerPawn.Value.Health;
+							int attackerHP = 0;
+							string attackerName = "Unknown";
 
-							attackerController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageGiven} / {hitsGiven}] From: [{damageTaken} / {hitsTaken}] - {targetController.PlayerName} -- ({targetHP} hp)");
-							targetController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageTaken} / {hitsTaken}] From: [{damageGiven} / {hitsGiven}] - {attackerController.PlayerName} -- ({attackerHP} hp)");
+							if (attackerController != null)
+							{
+								attackerHP = attackerController.PlayerPawn.Value.Health < 0 ? 0 : attackerController.PlayerPawn.Value.Health;
+								attackerName = attackerController.PlayerName;
+							}
+
+							int targetHP = 0;
+							string targetName = "Unknown";
+
+							if (targetController != null)
+							{
+								targetHP = targetController.PlayerPawn.Value.Health < 0 ? 0 : targetController.PlayerPawn.Value.Health;
+								targetName = targetController.PlayerName;
+							}
+
+							if (attackerController != null)
+								attackerController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageGiven} / {hitsGiven}] From: [{damageTaken} / {hitsTaken}] - {targetName} -- ({targetHP} hp)");
+
+							if (targetController != null)
+								targetController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageTaken} / {hitsTaken}] From: [{damageGiven} / {hitsGiven}] - {attackerName} -- ({attackerHP} hp)");
 
 							// Mark this pair as processed to avoid duplicates.
 							processedPairs.Add(new Tuple<int, int>(attackerId, targetId));

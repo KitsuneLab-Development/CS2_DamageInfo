@@ -1,19 +1,16 @@
 ﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
-using CounterStrikeSharp.API.Core.Attributes.Registration;
-using CounterStrikeSharp.API.Modules.Commands;
-using CounterStrikeSharp.API.Modules.Utils;
 
 namespace K4ryuuDamageInfo
 {
-	[MinimumApiVersion(5)]
+	[MinimumApiVersion(30)]
 	public class DamageInfoPlugin : BasePlugin
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "1.3.0";
+		public override string ModuleVersion => "1.3.1";
 		public override string ModuleAuthor => "K4ryuu";
-		private Dictionary<CCSPlayerController, DamageData> playerDamageData = new Dictionary<CCSPlayerController, DamageData>();
+		private readonly Dictionary<CCSPlayerController, DamageData> playerDamageData = new Dictionary<CCSPlayerController, DamageData>();
 		public Dictionary<int, Dictionary<int, DamagePlayerInfo>> playerDamageInfo = new Dictionary<int, Dictionary<int, DamagePlayerInfo>>();
 
 		public override void Load(bool hotReload)
@@ -22,41 +19,20 @@ namespace K4ryuuDamageInfo
 
 			RegisterEventHandler<EventPlayerHurt>((@event, info) =>
 			{
-				CCSPlayerController attackerController = @event.Attacker;
-				int targetId = @event.Userid.UserId ?? -1;
+				CCSPlayerController attacker = @event.Attacker;
 
-				if (attackerController.IsValid && (@event.DmgHealth > 0 || @event.DmgArmor > 0))
+				if (!attacker.IsValid || (attacker.IsBot && !(@event.DmgHealth > 0 || @event.DmgArmor > 0)))
+					return HookResult.Continue;
+
+				if (@event.Userid.TeamNum != attacker.TeamNum || CFG.config.FFAMode)
 				{
-					if (@event.Userid.TeamNum != attackerController.TeamNum || CFG.config.FFAMode)
-					{
-						if (CFG.config.RoundEndPrint)
-						{
-							int attackerId = attackerController.UserId ?? -1;
+					int targetId = (int)@event.Userid.UserId!;
 
-							if (!playerDamageInfo.ContainsKey(attackerId))
-							{
-								playerDamageInfo[attackerId] = new Dictionary<int, DamagePlayerInfo>();
-							}
+					if (CFG.config.RoundEndPrint)
+						UpdatePlayerDamageInfo(@event, targetId);
 
-							if (!playerDamageInfo[attackerId].ContainsKey(targetId))
-							{
-								playerDamageInfo[attackerId][targetId] = new DamagePlayerInfo();
-							}
-
-							playerDamageInfo[attackerId][targetId].DamageHP += @event.DmgHealth;
-							playerDamageInfo[attackerId][targetId].Hits++;
-						}
-
-						if (CFG.config.CenterPrint)
-						{
-							if (!playerDamageData.ContainsKey(attackerController))
-							{
-								playerDamageData[attackerController] = new DamageData();
-							}
-
-							playerDamageData[attackerController].UpdateDamage(attackerController, targetId, @event.DmgHealth, @event.DmgArmor, @event.Hitgroup);
-						}
-					}
+					if (CFG.config.CenterPrint)
+						UpdatePlayerDamageData(attacker, targetId, @event.DmgHealth, @event.DmgArmor, @event.Hitgroup);
 				}
 
 				return HookResult.Continue;
@@ -64,113 +40,113 @@ namespace K4ryuuDamageInfo
 
 			RegisterEventHandler<EventRoundEnd>((@event, info) =>
 			{
-				if (CFG.config.RoundEndPrint)
-				{
-					HashSet<Tuple<int, int>> processedPairs = new HashSet<Tuple<int, int>>();
+				if (!CFG.config.RoundEndPrint)
+					return HookResult.Continue;
 
-					foreach (var entry in playerDamageInfo)
-					{
-						int attackerId = entry.Key;
-						foreach (var targetEntry in entry.Value)
-						{
-							int targetId = targetEntry.Key;
-							if (processedPairs.Contains(new Tuple<int, int>(attackerId, targetId)) || processedPairs.Contains(new Tuple<int, int>(targetId, attackerId)))
-							{
-								// This pair has already been processed, so skip it.
-								continue;
-							}
-
-							// Access and use the damage information as needed.
-							int damageGiven = 0;
-							int hitsGiven = 0;
-							int damageTaken = 0;
-							int hitsTaken = 0;
-
-							if (playerDamageInfo.ContainsKey(attackerId) && playerDamageInfo[attackerId].ContainsKey(targetId))
-							{
-								damageGiven = playerDamageInfo[attackerId][targetId].DamageHP;
-								hitsGiven = playerDamageInfo[attackerId][targetId].Hits;
-							}
-
-							if (playerDamageInfo.ContainsKey(targetId) && playerDamageInfo[targetId].ContainsKey(attackerId))
-							{
-								damageTaken = playerDamageInfo[targetId][attackerId].DamageHP;
-								hitsTaken = playerDamageInfo[targetId][attackerId].Hits;
-							}
-
-							CCSPlayerController attackerController = Utilities.GetPlayerFromUserid(attackerId);
-							CCSPlayerController targetController = Utilities.GetPlayerFromUserid(targetId);
-
-							int attackerHP = 0;
-							string attackerName = "Unknown";
-
-							if (attackerController != null)
-							{
-								attackerHP = attackerController.PlayerPawn.Value.Health < 0 ? 0 : attackerController.PlayerPawn.Value.Health;
-								attackerName = attackerController.PlayerName;
-							}
-
-							int targetHP = 0;
-							string targetName = "Unknown";
-
-							if (targetController != null)
-							{
-								targetHP = targetController.PlayerPawn.Value.Health < 0 ? 0 : targetController.PlayerPawn.Value.Health;
-								targetName = targetController.PlayerName;
-							}
-
-							if (attackerController != null)
-								attackerController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageGiven} / {hitsGiven}] From: [{damageTaken} / {hitsTaken}] - {targetName} -- ({targetHP} hp)");
-
-							if (targetController != null)
-								targetController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageTaken} / {hitsTaken}] From: [{damageGiven} / {hitsGiven}] - {attackerName} -- ({attackerHP} hp)");
-
-							// Mark this pair as processed to avoid duplicates.
-							processedPairs.Add(new Tuple<int, int>(attackerId, targetId));
-						}
-					}
-
-					playerDamageInfo.Clear();
-				}
+				ProcessRoundEnd();
 
 				return HookResult.Continue;
 			});
+		}
+
+		private void UpdatePlayerDamageInfo(EventPlayerHurt @event, int targetId)
+		{
+			int attackerId = (int)@event.Attacker.UserId!;
+			if (!playerDamageInfo.TryGetValue(attackerId, out var attackerInfo))
+				playerDamageInfo[attackerId] = attackerInfo = new Dictionary<int, DamagePlayerInfo>();
+
+			if (!attackerInfo.TryGetValue(targetId, out var targetInfo))
+				attackerInfo[targetId] = targetInfo = new DamagePlayerInfo();
+
+			targetInfo.DamageHP += @event.DmgHealth;
+			targetInfo.Hits++;
+		}
+
+		private void UpdatePlayerDamageData(CCSPlayerController attacker, int targetId, int damageHP, int damageArmor, int hitGroup)
+		{
+			if (!playerDamageData.TryGetValue(attacker, out var damageData))
+				playerDamageData[attacker] = damageData = new DamageData();
+
+			damageData.UpdateDamage(attacker, targetId, damageHP, damageArmor, hitGroup);
+		}
+
+		private void ProcessRoundEnd()
+		{
+			HashSet<(int, int)> processedPairs = new HashSet<(int, int)>();
+
+			foreach (var entry in playerDamageInfo)
+			{
+				int attackerId = entry.Key;
+				foreach (var (targetId, targetEntry) in entry.Value)
+				{
+					if (processedPairs.Contains((attackerId, targetId)) || processedPairs.Contains((targetId, attackerId)))
+						continue;
+
+					// Access and use the damage information as needed.
+					int damageGiven = targetEntry.DamageHP;
+					int hitsGiven = targetEntry.Hits;
+					int damageTaken = 0;
+					int hitsTaken = 0;
+
+					if (playerDamageInfo.TryGetValue(targetId, out var targetInfo) && targetInfo.TryGetValue(attackerId, out var takenInfo))
+					{
+						damageTaken = takenInfo.DamageHP;
+						hitsTaken = takenInfo.Hits;
+					}
+
+					var attackerController = Utilities.GetPlayerFromUserid(attackerId);
+					var targetController = Utilities.GetPlayerFromUserid(targetId);
+
+					if (attackerController != null && targetController != null)
+					{
+						int attackerHP = attackerController.Health < 0 ? 0 : attackerController.Health;
+						string attackerName = attackerController.PlayerName;
+
+						int targetHP = targetController.Health < 0 ? 0 : targetController.Health;
+						string targetName = targetController.PlayerName;
+
+						attackerController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageGiven} / {hitsGiven}] From: [{damageTaken} / {hitsTaken}] - {targetName} -- ({targetHP} hp)");
+						targetController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageTaken} / {hitsTaken}] From: [{damageGiven} / {hitsGiven}] - {attackerName} -- ({attackerHP} hp)");
+					}
+
+					// Mark this pair as processed to avoid duplicates.
+					processedPairs.Add((attackerId, targetId));
+				}
+			}
+
+			playerDamageInfo.Clear();
 		}
 	}
 
 	internal class DamageData
 	{
-		private Dictionary<int, DamageInfo> damageInfo = new Dictionary<int, DamageInfo>();
-		private Dictionary<int, DateTime> lastUpdateTime = new Dictionary<int, DateTime>();
+		private readonly Dictionary<int, DamageInfo> damageInfo = new Dictionary<int, DamageInfo>();
+		private readonly Dictionary<int, DateTime> lastUpdateTime = new Dictionary<int, DateTime>();
 
-		public void UpdateDamage(CCSPlayerController attackerController, int targetId, int damageHP, int damageArmor, int Hitgroup)
+		public void UpdateDamage(CCSPlayerController attackerController, int targetId, int damageHP, int damageArmor, int hitGroup)
 		{
-			if (!damageInfo.ContainsKey(targetId))
-			{
-				damageInfo[targetId] = new DamageInfo();
-				lastUpdateTime[targetId] = DateTime.Now;
-			}
+			if (!damageInfo.TryGetValue(targetId, out var info))
+				damageInfo[targetId] = info = new DamageInfo();
 
 			ClearOutdatedDamageInfo(targetId);
 
-			damageInfo[targetId].DamageHP += damageHP;
-			damageInfo[targetId].DamageArmor += damageArmor;
+			info.DamageHP += damageHP;
+			info.DamageArmor += damageArmor;
 
-			if (damageHP > 200)
-			{
-				attackerController.PrintToCenter($"Damage Given:\nHP {damageInfo[targetId].DamageHP} | HitGroup: {HitGroupToString(Hitgroup)}");
-			}
-			else
-				attackerController.PrintToCenter($"Damage Given:\nHP {damageInfo[targetId].DamageHP} | Armor {damageInfo[targetId].DamageArmor} | HitGroup: {HitGroupToString(Hitgroup)}");
+			var printMessage = damageHP > 200
+				? $"Damage Given:\nHP {info.DamageHP} | HitGroup: {HitGroupToString(hitGroup)}"
+				: $"Damage Given:\nHP {info.DamageHP} | Armor {info.DamageArmor} | HitGroup: {HitGroupToString(hitGroup)}";
+
+			attackerController.PrintToCenter(printMessage);
 
 			lastUpdateTime[targetId] = DateTime.Now;
 		}
 
 		private void ClearOutdatedDamageInfo(int targetId)
 		{
-			if (lastUpdateTime.ContainsKey(targetId))
+			if (lastUpdateTime.TryGetValue(targetId, out var updateTime))
 			{
-				TimeSpan elapsed = DateTime.Now - lastUpdateTime[targetId];
+				var elapsed = DateTime.Now - updateTime;
 				if (elapsed.TotalSeconds > 5)
 				{
 					damageInfo.Remove(targetId);
@@ -181,41 +157,31 @@ namespace K4ryuuDamageInfo
 
 		public string HitGroupToString(int hitGroup)
 		{
-			switch (hitGroup)
+			return hitGroup switch
 			{
-				case 0:
-					return "Body";
-				case 1:
-					return "Head";
-				case 2:
-					return "Chest";
-				case 3:
-					return "Stomach";
-				case 4:
-					return "Left Arm";
-				case 5:
-					return "Right Arm";
-				case 6:
-					return "Left Leg";
-				case 7:
-					return "Right Leg";
-				case 10:
-					return "Gear";
-				default:
-					return "Unknown";
-			}
+				0 => "Body",
+				1 => "Head",
+				2 => "Chest",
+				3 => "Stomach",
+				4 => "Left Arm",
+				5 => "Right Arm",
+				6 => "Left Leg",
+				7 => "Right Leg",
+				10 => "Gear",
+				_ => "Unknown"
+			};
 		}
 	}
 
 	public class DamageInfo
 	{
-		public int DamageHP { get; set; }
-		public int DamageArmor { get; set; }
+		public int DamageHP { get; set; } = 0;
+		public int DamageArmor { get; set; } = 0;
 	}
 
 	public class DamagePlayerInfo
 	{
-		public int DamageHP { get; set; }
-		public int Hits { get; set; }
+		public int DamageHP { get; set; } = 0;
+		public int Hits { get; set; } = 0;
 	}
 }

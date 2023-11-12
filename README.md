@@ -70,7 +70,7 @@ CS2 server extension that displays the amount of damage players have inflicted o
 
 To use this server addon, you'll need the following dependencies installed:
 
-- [**CounterStrikeSharp**](https://github.com/roflmuffin/CounterStrikeSharp/actions/workflows/cmake-single-platform.yml): CounterStrikeSharp allows you to write server plugins in C# for Counter-Strike 2/Source2/CS2
+- [**CounterStrikeSharp**](https://github.com/roflmuffin/CounterStrikeSharp/releases): CounterStrikeSharp allows you to write server plugins in C# for Counter-Strike 2/Source2/CS2
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

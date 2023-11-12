@@ -8,7 +8,7 @@ namespace K4ryuuDamageInfo
 	public class DamageInfoPlugin : BasePlugin
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "1.3.1";
+		public override string ModuleVersion => "1.3.2";
 		public override string ModuleAuthor => "K4ryuu";
 		private readonly Dictionary<CCSPlayerController, DamageData> playerDamageData = new Dictionary<CCSPlayerController, DamageData>();
 		public Dictionary<int, Dictionary<int, DamagePlayerInfo>> playerDamageInfo = new Dictionary<int, Dictionary<int, DamagePlayerInfo>>();
@@ -21,7 +21,7 @@ namespace K4ryuuDamageInfo
 			{
 				CCSPlayerController attacker = @event.Attacker;
 
-				if (!attacker.IsValid || (attacker.IsBot && !(@event.DmgHealth > 0 || @event.DmgArmor > 0)))
+				if (!attacker.IsValid || attacker.IsBot && !(@event.DmgHealth > 0 || @event.DmgArmor > 0))
 					return HookResult.Continue;
 
 				if (@event.Userid.TeamNum != attacker.TeamNum || CFG.config.FFAMode)

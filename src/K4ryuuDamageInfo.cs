@@ -99,14 +99,14 @@ namespace K4ryuuDamageInfo
 
 					if (attackerController != null && targetController != null)
 					{
-						int attackerHP = attackerController.Health < 0 ? 0 : attackerController.Health;
+						int attackerHP = attackerController.PlayerPawn.Value.Health < 0 ? 0 : attackerController.PlayerPawn.Value.Health;
 						string attackerName = attackerController.PlayerName;
 
-						int targetHP = targetController.Health < 0 ? 0 : targetController.Health;
+						int targetHP = targetController.PlayerPawn.Value.Health < 0 ? 0 : targetController.PlayerPawn.Value.Health;
 						string targetName = targetController.PlayerName;
 
-						attackerController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageGiven} / {hitsGiven}] From: [{damageTaken} / {hitsTaken}] - {targetName} -- ({targetHP} hp)");
-						targetController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageTaken} / {hitsTaken}] From: [{damageGiven} / {hitsGiven}] - {attackerName} -- ({attackerHP} hp)");
+						attackerController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageGiven} / {hitsGiven} hits] From: [{damageTaken} / {hitsTaken} hits] - {targetName} -- ({targetHP} hp)");
+						targetController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageTaken} / {hitsTaken} hits] From: [{damageGiven} / {hitsGiven} hits] - {attackerName} -- ({attackerHP} hp)");
 					}
 
 					// Mark this pair as processed to avoid duplicates.

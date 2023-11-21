@@ -1,0 +1,4 @@
+-- 2023.10.21 - V1.3.3
+
+fix: First shot wrong damage display (#9)
+fix: Health display in chat (#8)

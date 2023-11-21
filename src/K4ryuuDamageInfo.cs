@@ -8,7 +8,7 @@ namespace K4ryuuDamageInfo
 	public class DamageInfoPlugin : BasePlugin
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "1.3.2";
+		public override string ModuleVersion => "1.3.3";
 		public override string ModuleAuthor => "K4ryuu";
 		private readonly Dictionary<CCSPlayerController, DamageData> playerDamageData = new Dictionary<CCSPlayerController, DamageData>();
 		public Dictionary<int, Dictionary<int, DamagePlayerInfo>> playerDamageInfo = new Dictionary<int, Dictionary<int, DamagePlayerInfo>>();
@@ -114,6 +114,7 @@ namespace K4ryuuDamageInfo
 				}
 			}
 
+			playerDamageData.Clear();
 			playerDamageInfo.Clear();
 		}
 	}

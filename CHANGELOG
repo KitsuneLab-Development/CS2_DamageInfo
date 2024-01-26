@@ -1,6 +1,7 @@
 -- 2024.01.26 - V2.0.1
 
 - fix: Transation bug at console print
+- fix: Duplicated print at the chat
 
 -- 2024.01.26 - V2.0.0
 

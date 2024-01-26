@@ -176,7 +176,7 @@ namespace K4ryuuDamageInfo
 
 			foreach (CCSPlayerController target in players)
 			{
-				if (target is null || !target.IsValid || !target.PlayerPawn.IsValid || target.IsBot || target.IsHLTV)
+				if (target is null || !target.IsValid || !target.PlayerPawn.IsValid || target.IsBot || target.IsHLTV || !target.PawnIsAlive)
 					continue;
 
 				DisplayDamageInfo(target);

@@ -5,6 +5,7 @@
 	"phrases.center.deadly": "Damage Given:\nHP {0} | HitGroup: {1}",
 	"phrases.center.normal": "Damage Given:\nHP {0} | Armor {1} | HitGroup: {2}",
 	"phrases.console.normal": "Damage Given To: {0} | HP {0} | Armor {1} | HitGroup: {2}",
+	"phrases.console.inverse": "Damage Taken From: {0} | HP {0} | Armor {1} | HitGroup: {2}",
 	"phrases.dead": "DEAD",
 	"phrases.hitgroup.0": "Body",
 	"phrases.hitgroup.1": "Head",

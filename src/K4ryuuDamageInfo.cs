@@ -101,7 +101,8 @@ namespace K4ryuuDamageInfo
 			{
 				if (Config.ConsoleDamageInfo)
 				{
-					attacker.PrintToConsole(Localizer["phrases.center.normal", victim.PlayerName, damageToHeath, damageToArmor, hitgroup]);
+					attacker.PrintToConsole(Localizer["phrases.console.normal", victim.PlayerName, damageToHeath, damageToArmor, hitgroup]);
+					victim.PrintToConsole(Localizer["phrases.console.inverse", attacker.PlayerName, damageToHeath, damageToArmor, hitgroup]);
 				}
 
 				if (Config.CenterDamageInfo)

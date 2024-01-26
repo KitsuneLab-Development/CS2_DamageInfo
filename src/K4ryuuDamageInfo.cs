@@ -13,6 +13,9 @@ namespace K4ryuuDamageInfo
 		[JsonPropertyName("round-end-summary")]
 		public bool RoundEndSummary { get; set; } = true;
 
+		[JsonPropertyName("round-end-summary-allow-death-print")]
+		public bool AlowDeathPrint { get; set; } = true;
+
 		[JsonPropertyName("center-damage-info")]
 		public bool CenterDamageInfo { get; set; } = true;
 
@@ -23,18 +26,19 @@ namespace K4ryuuDamageInfo
 		public bool FFAMode { get; set; } = false;
 
 		[JsonPropertyName("ConfigVersion")]
-		public override int Version { get; set; } = 1;
+		public override int Version { get; set; } = 2;
 	}
 
 	[MinimumApiVersion(153)]
 	public class DamageInfoPlugin : BasePlugin, IPluginConfig<PluginConfig>
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "2.0.1";
+		public override string ModuleVersion => "2.0.2";
 		public override string ModuleAuthor => "K4ryuu";
 
 		public required PluginConfig Config { get; set; } = new PluginConfig();
-		CCSGameRules? GameRules;
+		public CCSGameRules? GameRules;
+		public Dictionary<int, bool> IsDataShown = new Dictionary<int, bool>();
 
 		public void OnConfigParsed(PluginConfig config)
 		{
@@ -50,7 +54,9 @@ namespace K4ryuuDamageInfo
 		{
 			RegisterEventHandler<EventPlayerHurt>(OnPlayerHurt);
 			RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
+			RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
 			RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
+			RegisterEventHandler<EventRoundStart>(OnRoundStart);
 
 			RegisterListener<Listeners.OnMapStart>(OnMapStart);
 
@@ -65,9 +71,23 @@ namespace K4ryuuDamageInfo
 			});
 		}
 
+		private HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
+		{
+			CCSPlayerController player = @event.Userid;
+
+			if (player is null || !player.IsValid || !player.PlayerPawn.IsValid)
+				return HookResult.Continue;
+
+			IsDataShown[player.Slot] = false;
+			return HookResult.Continue;
+		}
+
 		private HookResult OnPlayerDeath(EventPlayerDeath @event, GameEventInfo info)
 		{
 			if (GameRules is null || GameRules.WarmupPeriod)
+				return HookResult.Continue;
+
+			if (!Config.AlowDeathPrint)
 				return HookResult.Continue;
 
 			CCSPlayerController victim = @event.Userid;
@@ -167,6 +187,12 @@ namespace K4ryuuDamageInfo
 			return HookResult.Continue;
 		}
 
+		private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
+		{
+			IsDataShown.Clear();
+			return HookResult.Continue;
+		}
+
 		private HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
 		{
 			if (!Config.RoundEndSummary)
@@ -193,6 +219,11 @@ namespace K4ryuuDamageInfo
 			if (!playerDamageInfos.ContainsKey(player.Slot))
 				return;
 
+			if (IsDataShown.ContainsKey(player.Slot) && IsDataShown[player.Slot])
+				return;
+
+			IsDataShown[player.Slot] = true;
+
 			PlayerDamageInfo playerInfo = playerDamageInfos[player.Slot];
 			HashSet<int> processedPlayers = new HashSet<int>();
 
@@ -211,8 +242,6 @@ namespace K4ryuuDamageInfo
 				player.PrintToChat($" {Localizer["phrases.summary.dataline", givenDamageInfo.TotalDamage, givenDamageInfo.Hits, takenDamageInfo.TotalDamage, takenDamageInfo.Hits, otherPlayer.PlayerName, otherPlayerHealth > 0 ? $"{otherPlayerHealth}HP" : $"{Localizer["phrases.dead"]}"]}");
 			}
 
-			Logger.LogInformation("DisplayDamageInfo: Middle");
-
 			foreach (KeyValuePair<int, DamageInfo> entry in playerInfo.TakenDamage)
 			{
 				int otherPlayerId = entry.Key;
@@ -225,11 +254,7 @@ namespace K4ryuuDamageInfo
 
 				CCSPlayerController otherPlayer = Utilities.GetPlayerFromSlot(otherPlayerId);
 
-				Logger.LogInformation($"otherPlayerHealth name: {otherPlayer.PlayerName}");
-
 				int otherPlayerHealth = otherPlayer.PlayerPawn.Value!.Health;
-
-				Logger.LogInformation($"PrintToChat");
 
 				player.PrintToChat($" {Localizer["phrases.summary.dataline", givenDamageInfo.TotalDamage, givenDamageInfo.Hits, takenDamageInfo.TotalDamage, takenDamageInfo.Hits, otherPlayer.PlayerName, otherPlayerHealth > 0 ? $"{otherPlayerHealth}HP" : $"{Localizer["phrases.dead"]}"]}");
 			}

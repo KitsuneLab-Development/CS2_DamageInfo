@@ -1,4 +1,12 @@
+-- 2024.01.26 - V2.0.1
+
+- fix: Transation bug at console print
+
+-- 2024.01.26 - V2.0.0
+
+- Complete remake
+
 -- 2023.10.21 - V1.3.3
 
-fix: First shot wrong damage display (#9)
-fix: Health display in chat (#8)
+- fix: First shot wrong damage display (#9)
+- fix: Health display in chat (#8)

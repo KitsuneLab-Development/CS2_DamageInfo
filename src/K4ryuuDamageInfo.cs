@@ -16,6 +16,9 @@ namespace K4ryuuDamageInfo
 		[JsonPropertyName("round-end-summary-allow-death-print")]
 		public bool AlowDeathPrint { get; set; } = true;
 
+		[JsonPropertyName("round-end-summary-show-all-damages")]
+		public bool ShowAllDamages { get; set; } = false;
+
 		[JsonPropertyName("center-damage-info")]
 		public bool CenterDamageInfo { get; set; } = true;
 
@@ -202,7 +205,7 @@ namespace K4ryuuDamageInfo
 
 			foreach (CCSPlayerController target in players)
 			{
-				if (target is null || !target.IsValid || !target.PlayerPawn.IsValid || target.IsBot || target.IsHLTV || !target.PawnIsAlive)
+				if (target is null || !target.IsValid || !target.PlayerPawn.IsValid || target.IsBot || target.IsHLTV)
 					continue;
 
 				DisplayDamageInfo(target);
@@ -216,18 +219,68 @@ namespace K4ryuuDamageInfo
 
 		private void DisplayDamageInfo(CCSPlayerController player)
 		{
-			if (!playerDamageInfos.ContainsKey(player.Slot))
-				return;
-
 			if (IsDataShown.ContainsKey(player.Slot) && IsDataShown[player.Slot])
 				return;
 
 			IsDataShown[player.Slot] = true;
-
-			PlayerDamageInfo playerInfo = playerDamageInfos[player.Slot];
-			HashSet<int> processedPlayers = new HashSet<int>();
-
 			player.PrintToChat($" {Localizer["phrases.summary.startline"]}");
+
+			if (Config.ShowAllDamages)
+			{
+				Dictionary<int, (DamageInfo given, DamageInfo taken)>? allPlayerSummaries = new Dictionary<int, (DamageInfo given, DamageInfo taken)>();
+
+				foreach (var playerDamage in playerDamageInfos)
+				{
+					allPlayerSummaries[playerDamage.Key] = SummarizePlayerDamage(playerDamage.Value);
+				}
+
+				foreach (var summary in allPlayerSummaries)
+				{
+					CCSPlayerController otherPlayer = Utilities.GetPlayerFromSlot(summary.Key);
+					string otherPlayerHealth = otherPlayer.PlayerPawn.Value!.Health > 0
+											   ? $"{otherPlayer.PlayerPawn.Value!.Health}HP"
+											   : $"{Localizer["phrases.dead"]}";
+
+					player.PrintToChat($" {Localizer["phrases.summary.dataline",
+						summary.Value.given.TotalDamage, summary.Value.given.Hits,
+						summary.Value.taken.TotalDamage, summary.Value.taken.Hits,
+						otherPlayer.PlayerName, otherPlayerHealth]}");
+				}
+			}
+			else
+			{
+				if (!playerDamageInfos.ContainsKey(player.Slot))
+					return;
+
+				DisplayPlayerDamageInfo(player, playerDamageInfos[player.Slot]);
+			}
+
+			player.PrintToChat($" {Localizer["phrases.summary.endline"]}");
+		}
+
+		private (DamageInfo given, DamageInfo taken) SummarizePlayerDamage(PlayerDamageInfo playerInfo)
+		{
+			DamageInfo totalGivenDamage = new DamageInfo();
+			DamageInfo totalTakenDamage = new DamageInfo();
+
+			foreach (var given in playerInfo.GivenDamage)
+			{
+				totalGivenDamage.TotalDamage += given.Value.TotalDamage;
+				totalGivenDamage.Hits += given.Value.Hits;
+			}
+
+			foreach (var taken in playerInfo.TakenDamage)
+			{
+				totalTakenDamage.TotalDamage += taken.Value.TotalDamage;
+				totalTakenDamage.Hits += taken.Value.Hits;
+			}
+
+			return (totalGivenDamage, totalTakenDamage);
+		}
+
+		private void DisplayPlayerDamageInfo(CCSPlayerController player, PlayerDamageInfo playerInfo)
+		{
+			HashSet<int> processedPlayers = new HashSet<int>();
 
 			foreach (KeyValuePair<int, DamageInfo> entry in playerInfo.GivenDamage)
 			{
@@ -258,8 +311,6 @@ namespace K4ryuuDamageInfo
 
 				player.PrintToChat($" {Localizer["phrases.summary.dataline", givenDamageInfo.TotalDamage, givenDamageInfo.Hits, takenDamageInfo.TotalDamage, takenDamageInfo.Hits, otherPlayer.PlayerName, otherPlayerHealth > 0 ? $"{otherPlayerHealth}HP" : $"{Localizer["phrases.dead"]}"]}");
 			}
-
-			player.PrintToChat($" {Localizer["phrases.summary.endline"]}");
 		}
 
 		private Dictionary<int, PlayerDamageInfo> playerDamageInfos = new Dictionary<int, PlayerDamageInfo>();

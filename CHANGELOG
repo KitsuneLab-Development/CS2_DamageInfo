@@ -1,3 +1,9 @@
+-- 2024.01.26 - V2.0.2
+
+- feat: Option to set global damage stats (for mm or small servers) to see everyone's given and taken damages
+- feat: Added config option to disable death print and only send statistics on RoundEnd
+- refactor: Changed code to not to hook events that not used (disabled in config)
+
 -- 2024.01.26 - V2.0.1
 
 - fix: Transation bug at console print

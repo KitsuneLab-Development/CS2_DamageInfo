@@ -1,188 +1,261 @@
-﻿using CounterStrikeSharp.API;
+﻿using System.Data;
+using System.Text.Json.Serialization;
+using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
+using CounterStrikeSharp.API.Modules.Utils;
+using Microsoft.Extensions.Logging;
 
 namespace K4ryuuDamageInfo
 {
-	[MinimumApiVersion(30)]
-	public class DamageInfoPlugin : BasePlugin
+	public sealed class PluginConfig : BasePluginConfig
+	{
+		[JsonPropertyName("round-end-summary")]
+		public bool RoundEndSummary { get; set; } = true;
+
+		[JsonPropertyName("center-damage-info")]
+		public bool CenterDamageInfo { get; set; } = true;
+
+		[JsonPropertyName("console-damage-info")]
+		public bool ConsoleDamageInfo { get; set; } = true;
+
+		[JsonPropertyName("ffa-mode")]
+		public bool FFAMode { get; set; } = false;
+
+		[JsonPropertyName("ConfigVersion")]
+		public override int Version { get; set; } = 1;
+	}
+
+	[MinimumApiVersion(153)]
+	public class DamageInfoPlugin : BasePlugin, IPluginConfig<PluginConfig>
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "1.3.3";
+		public override string ModuleVersion => "2.0.0";
 		public override string ModuleAuthor => "K4ryuu";
-		private readonly Dictionary<CCSPlayerController, DamageData> playerDamageData = new Dictionary<CCSPlayerController, DamageData>();
-		public Dictionary<int, Dictionary<int, DamagePlayerInfo>> playerDamageInfo = new Dictionary<int, Dictionary<int, DamagePlayerInfo>>();
+
+		public required PluginConfig Config { get; set; } = new PluginConfig();
+		CCSGameRules? GameRules;
+
+		public void OnConfigParsed(PluginConfig config)
+		{
+			if (config.Version < Config.Version)
+			{
+				base.Logger.LogWarning("Configuration version mismatch (Expected: {0} | Current: {1})", this.Config.Version, config.Version);
+			}
+
+			this.Config = config;
+		}
 
 		public override void Load(bool hotReload)
 		{
-			new CFG().CheckConfig(ModuleDirectory);
+			RegisterEventHandler<EventPlayerHurt>(OnPlayerHurt);
+			RegisterEventHandler<EventPlayerDeath>(OnPlayerDeath);
+			RegisterEventHandler<EventRoundEnd>(OnRoundEnd);
 
-			RegisterEventHandler<EventPlayerHurt>((@event, info) =>
+			RegisterListener<Listeners.OnMapStart>(OnMapStart);
+
+			OnMapStart("");
+		}
+
+		private void OnMapStart(string mapName)
+		{
+			AddTimer(1.0f, () =>
 			{
-				CCSPlayerController attacker = @event.Attacker;
-
-				if (!attacker.IsValid || attacker.IsBot && !(@event.DmgHealth > 0 || @event.DmgArmor > 0))
-					return HookResult.Continue;
-
-				if (@event.Userid.TeamNum != attacker.TeamNum || CFG.config.FFAMode)
-				{
-					int targetId = (int)@event.Userid.UserId!;
-
-					if (CFG.config.RoundEndPrint)
-						UpdatePlayerDamageInfo(@event, targetId);
-
-					if (CFG.config.CenterPrint)
-						UpdatePlayerDamageData(attacker, targetId, @event.DmgHealth, @event.DmgArmor, @event.Hitgroup);
-				}
-
-				return HookResult.Continue;
-			});
-
-			RegisterEventHandler<EventRoundEnd>((@event, info) =>
-			{
-				if (!CFG.config.RoundEndPrint)
-					return HookResult.Continue;
-
-				ProcessRoundEnd();
-
-				return HookResult.Continue;
+				GameRules = Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").First().GameRules;
 			});
 		}
 
-		private void UpdatePlayerDamageInfo(EventPlayerHurt @event, int targetId)
+		private HookResult OnPlayerDeath(EventPlayerDeath @event, GameEventInfo info)
 		{
-			int attackerId = (int)@event.Attacker.UserId!;
-			if (!playerDamageInfo.TryGetValue(attackerId, out var attackerInfo))
-				playerDamageInfo[attackerId] = attackerInfo = new Dictionary<int, DamagePlayerInfo>();
+			if (GameRules is null || GameRules.WarmupPeriod)
+				return HookResult.Continue;
 
-			if (!attackerInfo.TryGetValue(targetId, out var targetInfo))
-				attackerInfo[targetId] = targetInfo = new DamagePlayerInfo();
+			CCSPlayerController victim = @event.Userid;
 
-			targetInfo.DamageHP += @event.DmgHealth;
-			targetInfo.Hits++;
+			if (victim is null || !victim.IsValid || !victim.PlayerPawn.IsValid || victim.Connected == PlayerConnectedState.PlayerDisconnecting)
+				return HookResult.Continue;
+
+			DisplayDamageInfo(victim);
+
+			return HookResult.Continue;
 		}
 
-		private void UpdatePlayerDamageData(CCSPlayerController attacker, int targetId, int damageHP, int damageArmor, int hitGroup)
+		private HookResult OnPlayerHurt(EventPlayerHurt @event, GameEventInfo info)
 		{
-			if (!playerDamageData.TryGetValue(attacker, out var damageData))
-				playerDamageData[attacker] = damageData = new DamageData();
+			CCSPlayerController victim = @event.Userid;
 
-			damageData.UpdateDamage(attacker, targetId, damageHP, damageArmor, hitGroup);
-		}
+			if (victim is null || !victim.IsValid || !victim.PlayerPawn.IsValid)
+				return HookResult.Continue;
 
-		private void ProcessRoundEnd()
-		{
-			HashSet<(int, int)> processedPairs = new HashSet<(int, int)>();
+			CCSPlayerController attacker = @event.Attacker;
 
-			foreach (var entry in playerDamageInfo)
+			if (attacker is null || !attacker.IsValid || !attacker.PlayerPawn.IsValid)
+				return HookResult.Continue;
+
+			int damageToHeath = @event.DmgHealth;
+			int damageToArmor = @event.DmgArmor;
+
+			string hitgroup = Localizer[$"phrases.hitgroup.{@event.Hitgroup}"];
+
+			if (!attacker.IsBot && (victim.TeamNum != attacker.TeamNum || Config.FFAMode))
 			{
-				int attackerId = entry.Key;
-				foreach (var (targetId, targetEntry) in entry.Value)
+				if (Config.ConsoleDamageInfo)
 				{
-					if (processedPairs.Contains((attackerId, targetId)) || processedPairs.Contains((targetId, attackerId)))
-						continue;
+					attacker.PrintToConsole(Localizer["phrases.center.normal", victim.PlayerName, damageToHeath, damageToArmor, hitgroup]);
+				}
 
-					// Access and use the damage information as needed.
-					int damageGiven = targetEntry.DamageHP;
-					int hitsGiven = targetEntry.Hits;
-					int damageTaken = 0;
-					int hitsTaken = 0;
+				if (Config.CenterDamageInfo)
+				{
 
-					if (playerDamageInfo.TryGetValue(targetId, out var targetInfo) && targetInfo.TryGetValue(attackerId, out var takenInfo))
+					if (!recentDamages.ContainsKey(attacker.Slot))
 					{
-						damageTaken = takenInfo.DamageHP;
-						hitsTaken = takenInfo.Hits;
+						recentDamages[attacker.Slot] = new Dictionary<int, RecentDamage>();
 					}
 
-					var attackerController = Utilities.GetPlayerFromUserid(attackerId);
-					var targetController = Utilities.GetPlayerFromUserid(targetId);
-
-					if (attackerController != null && targetController != null)
+					if (!recentDamages[attacker.Slot].TryGetValue(victim.Slot, out RecentDamage? recentDamage))
 					{
-						int attackerHP = attackerController.PlayerPawn.Value.Health < 0 ? 0 : attackerController.PlayerPawn.Value.Health;
-						string attackerName = attackerController.PlayerName;
-
-						int targetHP = targetController.PlayerPawn.Value.Health < 0 ? 0 : targetController.PlayerPawn.Value.Health;
-						string targetName = targetController.PlayerName;
-
-						attackerController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageGiven} / {hitsGiven} hits] From: [{damageTaken} / {hitsTaken} hits] - {targetName} -- ({targetHP} hp)");
-						targetController.PrintToChat($" {CFG.config.ChatPrefix} To: [{damageTaken} / {hitsTaken} hits] From: [{damageGiven} / {hitsGiven} hits] - {attackerName} -- ({attackerHP} hp)");
+						recentDamage = new RecentDamage();
+						recentDamages[attacker.Slot][victim.Slot] = recentDamage;
 					}
 
-					// Mark this pair as processed to avoid duplicates.
-					processedPairs.Add((attackerId, targetId));
+					if (DateTime.Now - recentDamage.LastDamageTime <= TimeSpan.FromSeconds(5))
+					{
+						recentDamage.TotalDamage += damageToHeath;
+					}
+					else
+					{
+						recentDamage.TotalDamage = damageToHeath;
+					}
+
+					recentDamage.LastDamageTime = DateTime.Now;
+
+					// This is because of a wierd bug, where if the damage is above 110, the "Armor: x - HitGroup:" gets replaced with ************** ._: idk why
+					// If you wanna check it, remove this block, print always the normal and shoot a bot with awp to the head
+					string printMessage = recentDamage.TotalDamage > 110
+						? Localizer["phrases.center.deadly", recentDamage.TotalDamage, hitgroup]
+						: Localizer["phrases.center.normal", recentDamage.TotalDamage, damageToArmor, hitgroup];
+
+					attacker.PrintToCenter(printMessage);
 				}
 			}
 
-			playerDamageData.Clear();
-			playerDamageInfo.Clear();
-		}
-	}
+			if (GameRules is null || GameRules.WarmupPeriod)
+				return HookResult.Continue;
 
-	internal class DamageData
-	{
-		private readonly Dictionary<int, DamageInfo> damageInfo = new Dictionary<int, DamageInfo>();
-		private readonly Dictionary<int, DateTime> lastUpdateTime = new Dictionary<int, DateTime>();
-
-		public void UpdateDamage(CCSPlayerController attackerController, int targetId, int damageHP, int damageArmor, int hitGroup)
-		{
-			if (!damageInfo.TryGetValue(targetId, out var info))
-				damageInfo[targetId] = info = new DamageInfo();
-
-			ClearOutdatedDamageInfo(targetId);
-
-			info.DamageHP += damageHP;
-			info.DamageArmor += damageArmor;
-
-			var printMessage = damageHP > 200
-				? $"Damage Given:\nHP {info.DamageHP} | HitGroup: {HitGroupToString(hitGroup)}"
-				: $"Damage Given:\nHP {info.DamageHP} | Armor {info.DamageArmor} | HitGroup: {HitGroupToString(hitGroup)}";
-
-			attackerController.PrintToCenter(printMessage);
-
-			lastUpdateTime[targetId] = DateTime.Now;
-		}
-
-		private void ClearOutdatedDamageInfo(int targetId)
-		{
-			if (lastUpdateTime.TryGetValue(targetId, out var updateTime))
+			if (Config.RoundEndSummary)
 			{
-				var elapsed = DateTime.Now - updateTime;
-				if (elapsed.TotalSeconds > 5)
-				{
-					damageInfo.Remove(targetId);
-					lastUpdateTime.Remove(targetId);
-				}
+				if (!playerDamageInfos.ContainsKey(victim.Slot))
+					playerDamageInfos.Add(victim.Slot, new PlayerDamageInfo());
+
+				if (!playerDamageInfos.ContainsKey(attacker.Slot))
+					playerDamageInfos.Add(attacker.Slot, new PlayerDamageInfo());
+
+				if (!playerDamageInfos[victim.Slot].TakenDamage.ContainsKey(attacker.Slot))
+					playerDamageInfos[victim.Slot].TakenDamage.Add(attacker.Slot, new DamageInfo());
+
+				if (!playerDamageInfos[attacker.Slot].GivenDamage.ContainsKey(victim.Slot))
+					playerDamageInfos[attacker.Slot].GivenDamage.Add(victim.Slot, new DamageInfo());
+
+				playerDamageInfos[victim.Slot].TakenDamage[attacker.Slot].TotalDamage += damageToHeath;
+				playerDamageInfos[victim.Slot].TakenDamage[attacker.Slot].Hits++;
+
+				playerDamageInfos[attacker.Slot].GivenDamage[victim.Slot].TotalDamage += damageToHeath;
+				playerDamageInfos[attacker.Slot].GivenDamage[victim.Slot].Hits++;
 			}
+
+			return HookResult.Continue;
 		}
 
-		public string HitGroupToString(int hitGroup)
+		private HookResult OnRoundEnd(EventRoundEnd @event, GameEventInfo info)
 		{
-			return hitGroup switch
+			if (!Config.RoundEndSummary)
+				return HookResult.Continue;
+
+			List<CCSPlayerController> players = Utilities.GetPlayers();
+
+			foreach (CCSPlayerController target in players)
 			{
-				0 => "Body",
-				1 => "Head",
-				2 => "Chest",
-				3 => "Stomach",
-				4 => "Left Arm",
-				5 => "Right Arm",
-				6 => "Left Leg",
-				7 => "Right Leg",
-				10 => "Gear",
-				_ => "Unknown"
-			};
+				if (target is null || !target.IsValid || !target.PlayerPawn.IsValid || target.IsBot || target.IsHLTV)
+					continue;
+
+				DisplayDamageInfo(target);
+			}
+
+			playerDamageInfos.Clear();
+			recentDamages.Clear();
+
+			return HookResult.Continue;
 		}
-	}
 
-	public class DamageInfo
-	{
-		public int DamageHP { get; set; } = 0;
-		public int DamageArmor { get; set; } = 0;
-	}
+		private void DisplayDamageInfo(CCSPlayerController player)
+		{
+			if (!playerDamageInfos.ContainsKey(player.Slot))
+				return;
 
-	public class DamagePlayerInfo
-	{
-		public int DamageHP { get; set; } = 0;
-		public int Hits { get; set; } = 0;
+			PlayerDamageInfo playerInfo = playerDamageInfos[player.Slot];
+			HashSet<int> processedPlayers = new HashSet<int>();
+
+			player.PrintToChat($" {Localizer["phrases.summary.startline"]}");
+
+			foreach (KeyValuePair<int, DamageInfo> entry in playerInfo.GivenDamage)
+			{
+				int otherPlayerId = entry.Key;
+				DamageInfo givenDamageInfo = entry.Value;
+				DamageInfo takenDamageInfo = playerInfo.TakenDamage.ContainsKey(otherPlayerId) ? playerInfo.TakenDamage[otherPlayerId] : new DamageInfo();
+				processedPlayers.Add(otherPlayerId);
+
+				CCSPlayerController otherPlayer = Utilities.GetPlayerFromSlot(otherPlayerId);
+				int otherPlayerHealth = otherPlayer.PlayerPawn.Value!.Health;
+
+				player.PrintToChat($" {Localizer["phrases.summary.dataline", givenDamageInfo.TotalDamage, givenDamageInfo.Hits, takenDamageInfo.TotalDamage, takenDamageInfo.Hits, otherPlayer.PlayerName, otherPlayerHealth > 0 ? $"{otherPlayerHealth}HP" : $"{Localizer["phrases.dead"]}"]}");
+			}
+
+			Logger.LogInformation("DisplayDamageInfo: Middle");
+
+			foreach (KeyValuePair<int, DamageInfo> entry in playerInfo.TakenDamage)
+			{
+				int otherPlayerId = entry.Key;
+
+				if (processedPlayers.Contains(otherPlayerId))
+					continue;
+
+				DamageInfo takenDamageInfo = entry.Value;
+				DamageInfo givenDamageInfo = new DamageInfo();
+
+				CCSPlayerController otherPlayer = Utilities.GetPlayerFromSlot(otherPlayerId);
+
+				Logger.LogInformation($"otherPlayerHealth name: {otherPlayer.PlayerName}");
+
+				int otherPlayerHealth = otherPlayer.PlayerPawn.Value!.Health;
+
+				Logger.LogInformation($"PrintToChat");
+
+				player.PrintToChat($" {Localizer["phrases.summary.dataline", givenDamageInfo.TotalDamage, givenDamageInfo.Hits, takenDamageInfo.TotalDamage, takenDamageInfo.Hits, otherPlayer.PlayerName, otherPlayerHealth > 0 ? $"{otherPlayerHealth}HP" : $"{Localizer["phrases.dead"]}"]}");
+			}
+
+			player.PrintToChat($" {Localizer["phrases.summary.endline"]}");
+		}
+
+		private Dictionary<int, PlayerDamageInfo> playerDamageInfos = new Dictionary<int, PlayerDamageInfo>();
+
+		private class PlayerDamageInfo
+		{
+			public Dictionary<int, DamageInfo> GivenDamage = new Dictionary<int, DamageInfo>();
+			public Dictionary<int, DamageInfo> TakenDamage = new Dictionary<int, DamageInfo>();
+		}
+
+		private class DamageInfo
+		{
+			public int TotalDamage = 0;
+			public int Hits = 0;
+		}
+
+		private Dictionary<int, Dictionary<int, RecentDamage>> recentDamages = new Dictionary<int, Dictionary<int, RecentDamage>>();
+
+		private class RecentDamage
+		{
+			public int TotalDamage;
+			public DateTime LastDamageTime;
+		}
 	}
 }

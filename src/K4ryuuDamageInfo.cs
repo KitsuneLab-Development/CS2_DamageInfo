@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
-using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace K4ryuuDamageInfo
@@ -18,6 +17,9 @@ namespace K4ryuuDamageInfo
 
 		[JsonPropertyName("round-end-summary-show-all-damages")]
 		public bool ShowAllDamages { get; set; } = false;
+
+		[JsonPropertyName("round-end-summary-show-all-damages-enemies-only")]
+		public bool ShowAllDamagesTeamOnly { get; set; } = true;
 
 		[JsonPropertyName("center-damage-info")]
 		public bool CenterDamageInfo { get; set; } = true;
@@ -36,7 +38,7 @@ namespace K4ryuuDamageInfo
 	public class DamageInfoPlugin : BasePlugin, IPluginConfig<PluginConfig>
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "2.0.2";
+		public override string ModuleVersion => "2.0.3";
 		public override string ModuleAuthor => "K4ryuu";
 
 		public required PluginConfig Config { get; set; } = new PluginConfig();
@@ -125,7 +127,9 @@ namespace K4ryuuDamageInfo
 				if (Config.ConsoleDamageInfo)
 				{
 					attacker.PrintToConsole(Localizer["phrases.console.normal", victim.PlayerName, damageToHeath, damageToArmor, hitgroup]);
-					victim.PrintToConsole(Localizer["phrases.console.inverse", attacker.PlayerName, damageToHeath, damageToArmor, hitgroup]);
+
+					if (!victim.IsBot)
+						victim.PrintToConsole(Localizer["phrases.console.inverse", attacker.PlayerName, damageToHeath, damageToArmor, hitgroup]);
 				}
 
 				if (Config.CenterDamageInfo)
@@ -222,12 +226,15 @@ namespace K4ryuuDamageInfo
 			if (IsDataShown.ContainsKey(player.Slot) && IsDataShown[player.Slot])
 				return;
 
-			IsDataShown[player.Slot] = true;
-			player.PrintToChat($" {Localizer["phrases.summary.startline"]}");
-
 			if (Config.ShowAllDamages)
 			{
 				Dictionary<int, (DamageInfo given, DamageInfo taken)>? allPlayerSummaries = new Dictionary<int, (DamageInfo given, DamageInfo taken)>();
+
+				if (allPlayerSummaries.Count == 0)
+					return;
+
+				IsDataShown[player.Slot] = true;
+				player.PrintToChat($" {Localizer["phrases.summary.startline"]}");
 
 				foreach (var playerDamage in playerDamageInfos)
 				{
@@ -237,6 +244,10 @@ namespace K4ryuuDamageInfo
 				foreach (var summary in allPlayerSummaries)
 				{
 					CCSPlayerController otherPlayer = Utilities.GetPlayerFromSlot(summary.Key);
+
+					if (Config.ShowAllDamagesTeamOnly && otherPlayer.TeamNum == player.TeamNum)
+						continue;
+
 					string otherPlayerHealth = otherPlayer.PlayerPawn.Value!.Health > 0
 											   ? $"{otherPlayer.PlayerPawn.Value!.Health}HP"
 											   : $"{Localizer["phrases.dead"]}";
@@ -246,16 +257,21 @@ namespace K4ryuuDamageInfo
 						summary.Value.taken.TotalDamage, summary.Value.taken.Hits,
 						otherPlayer.PlayerName, otherPlayerHealth]}");
 				}
+
+				player.PrintToChat($" {Localizer["phrases.summary.endline"]}");
 			}
 			else
 			{
 				if (!playerDamageInfos.ContainsKey(player.Slot))
 					return;
 
-				DisplayPlayerDamageInfo(player, playerDamageInfos[player.Slot]);
-			}
+				IsDataShown[player.Slot] = true;
+				player.PrintToChat($" {Localizer["phrases.summary.startline"]}");
 
-			player.PrintToChat($" {Localizer["phrases.summary.endline"]}");
+				DisplayPlayerDamageInfo(player, playerDamageInfos[player.Slot]);
+
+				player.PrintToChat($" {Localizer["phrases.summary.endline"]}");
+			}
 		}
 
 		private (DamageInfo given, DamageInfo taken) SummarizePlayerDamage(PlayerDamageInfo playerInfo)

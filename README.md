@@ -118,6 +118,14 @@ Before you begin, ensure you have the following prerequisites:
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
+### Translators
+
+I really appreciate the help of the following people who translated the plugin into their language:
+
+- **[deadmau5v](https://github.com/deadmau5v)**: Chinese
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 <!-- USAGE EXAMPLES -->
 
 ## Usage

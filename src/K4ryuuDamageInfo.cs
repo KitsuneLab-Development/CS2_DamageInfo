@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
+using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace K4ryuuDamageInfo
@@ -30,6 +31,9 @@ namespace K4ryuuDamageInfo
 		[JsonPropertyName("ffa-mode")]
 		public bool FFAMode { get; set; } = false;
 
+		[JsonPropertyName("norounds-mode")]
+		public bool NoRoundsMode { get; set; } = false;
+
 		[JsonPropertyName("ConfigVersion")]
 		public override int Version { get; set; } = 2;
 	}
@@ -38,7 +42,7 @@ namespace K4ryuuDamageInfo
 	public class DamageInfoPlugin : BasePlugin, IPluginConfig<PluginConfig>
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "2.0.3";
+		public override string ModuleVersion => "2.1.0";
 		public override string ModuleAuthor => "K4ryuu";
 
 		public required PluginConfig Config { get; set; } = new PluginConfig();
@@ -101,6 +105,15 @@ namespace K4ryuuDamageInfo
 				return HookResult.Continue;
 
 			DisplayDamageInfo(victim);
+
+			if (Config.NoRoundsMode)
+			{
+				if (!playerDamageInfos.ContainsKey(victim.Slot) || playerDamageInfos[victim.Slot] is null)
+					return HookResult.Continue;
+
+				playerDamageInfos[victim.Slot].GivenDamage.Clear();
+				playerDamageInfos[victim.Slot].TakenDamage.Clear();
+			}
 
 			return HookResult.Continue;
 		}
@@ -197,6 +210,10 @@ namespace K4ryuuDamageInfo
 		private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
 		{
 			IsDataShown.Clear();
+
+			playerDamageInfos.Clear();
+			recentDamages.Clear();
+
 			return HookResult.Continue;
 		}
 
@@ -205,15 +222,10 @@ namespace K4ryuuDamageInfo
 			if (!Config.RoundEndSummary)
 				return HookResult.Continue;
 
-			List<CCSPlayerController> players = Utilities.GetPlayers();
-
-			foreach (CCSPlayerController target in players)
-			{
-				if (target is null || !target.IsValid || !target.PlayerPawn.IsValid || target.IsBot || target.IsHLTV)
-					continue;
-
-				DisplayDamageInfo(target);
-			}
+			Utilities.GetPlayers()
+				.Where(p => p?.IsValid == true && p.PlayerPawn?.IsValid == true && !p.IsBot && !p.IsHLTV && p.Connected == PlayerConnectedState.PlayerConnected && p.TeamNum != 0)
+				.ToList()
+				.ForEach(DisplayDamageInfo);
 
 			playerDamageInfos.Clear();
 			recentDamages.Clear();
@@ -230,16 +242,15 @@ namespace K4ryuuDamageInfo
 			{
 				Dictionary<int, (DamageInfo given, DamageInfo taken)>? allPlayerSummaries = new Dictionary<int, (DamageInfo given, DamageInfo taken)>();
 
-				if (allPlayerSummaries.Count == 0)
-					return;
-
 				IsDataShown[player.Slot] = true;
-				player.PrintToChat($" {Localizer["phrases.summary.startline"]}");
 
 				foreach (var playerDamage in playerDamageInfos)
 				{
 					allPlayerSummaries[playerDamage.Key] = SummarizePlayerDamage(playerDamage.Value);
 				}
+
+				if (allPlayerSummaries.Count == 0)
+					return;
 
 				foreach (var summary in allPlayerSummaries)
 				{
@@ -262,7 +273,7 @@ namespace K4ryuuDamageInfo
 			}
 			else
 			{
-				if (!playerDamageInfos.ContainsKey(player.Slot))
+				if (!playerDamageInfos.ContainsKey(player.Slot) || playerDamageInfos[player.Slot] is null)
 					return;
 
 				IsDataShown[player.Slot] = true;

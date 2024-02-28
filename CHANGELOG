@@ -1,3 +1,10 @@
+-- 2024.02.28 - V2.1.0
+
+- feat: Add NoRounds mode to support gamemodes with no rounds
+- fix: Add array reset to roundstart to prevent wrong damage numbers
+- fix: Random error log on slow player init compared to roundend
+- fix: Fix print problems with specific settings
+
 -- 2024.01.26 - V2.0.3
 
 - fix: Crash if you shoot bot with console enabled

@@ -42,7 +42,7 @@ namespace K4ryuuDamageInfo
 	public class DamageInfoPlugin : BasePlugin, IPluginConfig<PluginConfig>
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "2.1.0";
+		public override string ModuleVersion => "2.1.1";
 		public override string ModuleAuthor => "K4ryuu";
 
 		public required PluginConfig Config { get; set; } = new PluginConfig();
@@ -252,6 +252,8 @@ namespace K4ryuuDamageInfo
 				if (allPlayerSummaries.Count == 0)
 					return;
 
+				player.PrintToChat($" {Localizer["phrases.summary.startline"]}");
+
 				foreach (var summary in allPlayerSummaries)
 				{
 					CCSPlayerController otherPlayer = Utilities.GetPlayerFromSlot(summary.Key);
@@ -264,8 +266,8 @@ namespace K4ryuuDamageInfo
 											   : $"{Localizer["phrases.dead"]}";
 
 					player.PrintToChat($" {Localizer["phrases.summary.dataline",
-						summary.Value.given.TotalDamage, summary.Value.given.Hits,
 						summary.Value.taken.TotalDamage, summary.Value.taken.Hits,
+						summary.Value.given.TotalDamage, summary.Value.given.Hits,
 						otherPlayer.PlayerName, otherPlayerHealth]}");
 				}
 

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
+using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
 
@@ -128,6 +129,9 @@ namespace K4ryuuDamageInfo
 			CCSPlayerController attacker = @event.Attacker;
 
 			if (attacker is null || !attacker.IsValid || !attacker.PlayerPawn.IsValid)
+				return HookResult.Continue;
+
+			if (victim.TeamNum == attacker.TeamNum && !ConVar.Find("mp_friendlyfire")!.GetPrimitiveValue<bool>())
 				return HookResult.Continue;
 
 			int damageToHeath = @event.DmgHealth;

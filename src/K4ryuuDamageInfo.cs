@@ -3,7 +3,9 @@ using System.Text.Json.Serialization;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
+using CounterStrikeSharp.API.Modules.Admin;
 using CounterStrikeSharp.API.Modules.Cvars;
+using CounterStrikeSharp.API.Modules.Entities;
 using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
 
@@ -35,15 +37,24 @@ namespace K4ryuuDamageInfo
 		[JsonPropertyName("norounds-mode")]
 		public bool NoRoundsMode { get; set; } = false;
 
+		[JsonPropertyName("center-info-flags")]
+		public List<string> CenterInfoFlags { get; set; } = new List<string>
+		{
+			"@myplugin/can-see-permission",
+			"#myplugin/can-see-group",
+			"can-see-override",
+			"leave-empty-so-let-everyone-see"
+		};
+
 		[JsonPropertyName("ConfigVersion")]
-		public override int Version { get; set; } = 2;
+		public override int Version { get; set; } = 3;
 	}
 
 	[MinimumApiVersion(153)]
 	public class DamageInfoPlugin : BasePlugin, IPluginConfig<PluginConfig>
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "2.1.1";
+		public override string ModuleVersion => "2.2.0";
 		public override string ModuleAuthor => "K4ryuu";
 
 		public required PluginConfig Config { get; set; } = new PluginConfig();
@@ -149,7 +160,7 @@ namespace K4ryuuDamageInfo
 						victim.PrintToConsole(Localizer["phrases.console.inverse", attacker.PlayerName, damageToHeath, damageToArmor, hitgroup]);
 				}
 
-				if (Config.CenterDamageInfo)
+				if (Config.CenterDamageInfo && PlayerHasPermissions(attacker))
 				{
 
 					if (!recentDamages.ContainsKey(attacker.Slot))
@@ -366,6 +377,35 @@ namespace K4ryuuDamageInfo
 		{
 			public int TotalDamage;
 			public DateTime LastDamageTime;
+		}
+
+		public bool PlayerHasPermissions(CCSPlayerController player)
+		{
+			if (Config.CenterInfoFlags.Count == 0)
+				return true;
+
+			bool hasPermission = false;
+
+			foreach (string checkPermission in Config.CenterInfoFlags)
+			{
+				switch (checkPermission[0])
+				{
+					case '@':
+						if (AdminManager.PlayerHasPermissions(player, checkPermission))
+							hasPermission = true;
+						break;
+					case '#':
+						if (AdminManager.PlayerInGroup(player, checkPermission))
+							hasPermission = true;
+						break;
+					default:
+						if (AdminManager.PlayerHasCommandOverride(player, checkPermission))
+							hasPermission = true;
+						break;
+				}
+			}
+
+			return hasPermission;
 		}
 	}
 }

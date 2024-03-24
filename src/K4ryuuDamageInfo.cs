@@ -4,9 +4,6 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Modules.Admin;
-using CounterStrikeSharp.API.Modules.Cvars;
-using CounterStrikeSharp.API.Modules.Entities;
-using CounterStrikeSharp.API.Modules.Utils;
 using Microsoft.Extensions.Logging;
 
 namespace K4ryuuDamageInfo
@@ -18,6 +15,12 @@ namespace K4ryuuDamageInfo
 
 		[JsonPropertyName("round-end-summary-allow-death-print")]
 		public bool AlowDeathPrint { get; set; } = true;
+
+		[JsonPropertyName("round-end-summary-show-only-killer")]
+		public bool ShowOnlyKiller { get; set; } = false;
+
+		[JsonPropertyName("round-end-summary-show-friendlyfire")]
+		public bool ShowFriendlyFire { get; set; } = false;
 
 		[JsonPropertyName("round-end-summary-show-all-damages")]
 		public bool ShowAllDamages { get; set; } = false;
@@ -47,19 +50,20 @@ namespace K4ryuuDamageInfo
 		};
 
 		[JsonPropertyName("ConfigVersion")]
-		public override int Version { get; set; } = 3;
+		public override int Version { get; set; } = 4;
 	}
 
 	[MinimumApiVersion(153)]
 	public class DamageInfoPlugin : BasePlugin, IPluginConfig<PluginConfig>
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "2.2.0";
+		public override string ModuleVersion => "2.3.0";
 		public override string ModuleAuthor => "K4ryuu";
 
 		public required PluginConfig Config { get; set; } = new PluginConfig();
 		public CCSGameRules? GameRules;
-		public Dictionary<int, bool> IsDataShown = new Dictionary<int, bool>();
+		private bool[] IsDataShown = new bool[65];
+		private int[] VictimKiller = new int[65];
 
 		public void OnConfigParsed(PluginConfig config)
 		{
@@ -103,6 +107,18 @@ namespace K4ryuuDamageInfo
 			return HookResult.Continue;
 		}
 
+		private HookResult OnPlayerDeath(EventPlayerConnectFull @event, GameEventInfo info)
+		{
+			CCSPlayerController player = @event.Userid;
+
+			if (player is null || !player.IsValid)
+				return HookResult.Continue;
+
+			IsDataShown[player.Slot] = false;
+			VictimKiller[player.Slot] = -1;
+			return HookResult.Continue;
+		}
+
 		private HookResult OnPlayerDeath(EventPlayerDeath @event, GameEventInfo info)
 		{
 			if (GameRules is null || GameRules.WarmupPeriod)
@@ -112,9 +128,11 @@ namespace K4ryuuDamageInfo
 				return HookResult.Continue;
 
 			CCSPlayerController victim = @event.Userid;
-
 			if (victim is null || !victim.IsValid || !victim.PlayerPawn.IsValid || victim.Connected == PlayerConnectedState.PlayerDisconnecting)
 				return HookResult.Continue;
+
+			CCSPlayerController attacker = @event.Attacker;
+			VictimKiller[victim.Slot] = attacker?.IsValid == true && attacker.PlayerPawn?.IsValid == true ? attacker.Slot : -1;
 
 			DisplayDamageInfo(victim);
 
@@ -142,7 +160,7 @@ namespace K4ryuuDamageInfo
 			if (attacker is null || !attacker.IsValid || !attacker.PlayerPawn.IsValid)
 				return HookResult.Continue;
 
-			if (victim.TeamNum == attacker.TeamNum && !ConVar.Find("mp_friendlyfire")!.GetPrimitiveValue<bool>())
+			if (victim.TeamNum == attacker.TeamNum && !Config.ShowFriendlyFire)
 				return HookResult.Continue;
 
 			int damageToHeath = @event.DmgHealth;
@@ -224,8 +242,6 @@ namespace K4ryuuDamageInfo
 
 		private HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
 		{
-			IsDataShown.Clear();
-
 			playerDamageInfos.Clear();
 			recentDamages.Clear();
 
@@ -250,7 +266,7 @@ namespace K4ryuuDamageInfo
 
 		private void DisplayDamageInfo(CCSPlayerController player)
 		{
-			if (IsDataShown.ContainsKey(player.Slot) && IsDataShown[player.Slot])
+			if (IsDataShown[player.Slot])
 				return;
 
 			if (Config.ShowAllDamages)
@@ -294,11 +310,7 @@ namespace K4ryuuDamageInfo
 					return;
 
 				IsDataShown[player.Slot] = true;
-				player.PrintToChat($" {Localizer["phrases.summary.startline"]}");
-
 				DisplayPlayerDamageInfo(player, playerDamageInfos[player.Slot]);
-
-				player.PrintToChat($" {Localizer["phrases.summary.endline"]}");
 			}
 		}
 
@@ -324,11 +336,19 @@ namespace K4ryuuDamageInfo
 
 		private void DisplayPlayerDamageInfo(CCSPlayerController player, PlayerDamageInfo playerInfo)
 		{
+			bool printed = false;
 			HashSet<int> processedPlayers = new HashSet<int>();
 
 			foreach (KeyValuePair<int, DamageInfo> entry in playerInfo.GivenDamage)
 			{
 				int otherPlayerId = entry.Key;
+
+				if (Config.ShowOnlyKiller && VictimKiller[player.Slot] != otherPlayerId)
+					continue;
+
+				if (!printed)
+					player.PrintToChat($" {Localizer["phrases.summary.startline"]}");
+
 				DamageInfo givenDamageInfo = entry.Value;
 				DamageInfo takenDamageInfo = playerInfo.TakenDamage.ContainsKey(otherPlayerId) ? playerInfo.TakenDamage[otherPlayerId] : new DamageInfo();
 				processedPlayers.Add(otherPlayerId);
@@ -343,8 +363,14 @@ namespace K4ryuuDamageInfo
 			{
 				int otherPlayerId = entry.Key;
 
+				if (Config.ShowOnlyKiller && VictimKiller[player.Slot] != otherPlayerId)
+					continue;
+
 				if (processedPlayers.Contains(otherPlayerId))
 					continue;
+
+				if (!printed)
+					player.PrintToChat($" {Localizer["phrases.summary.startline"]}");
 
 				DamageInfo takenDamageInfo = entry.Value;
 				DamageInfo givenDamageInfo = new DamageInfo();
@@ -355,6 +381,9 @@ namespace K4ryuuDamageInfo
 
 				player.PrintToChat($" {Localizer["phrases.summary.dataline", givenDamageInfo.TotalDamage, givenDamageInfo.Hits, takenDamageInfo.TotalDamage, takenDamageInfo.Hits, otherPlayer.PlayerName, otherPlayerHealth > 0 ? $"{otherPlayerHealth}HP" : $"{Localizer["phrases.dead"]}"]}");
 			}
+
+			if (printed)
+				player.PrintToChat($" {Localizer["phrases.summary.endline"]}");
 		}
 
 		private Dictionary<int, PlayerDamageInfo> playerDamageInfos = new Dictionary<int, PlayerDamageInfo>();

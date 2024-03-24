@@ -1,3 +1,9 @@
+-- 2024.03.23 - V2.3.0
+
+- feat: Show only killer damage info setting (DM FFA)
+- feat: Show team damage info setting
+- fix: Start and End line shown if no data
+
 -- 2024.03.23 - V2.2.0
 
 - feat: Center text flag support (#23)

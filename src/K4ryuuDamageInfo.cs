@@ -57,7 +57,7 @@ namespace K4ryuuDamageInfo
 	public class DamageInfoPlugin : BasePlugin, IPluginConfig<PluginConfig>
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "2.3.0";
+		public override string ModuleVersion => "2.3.1";
 		public override string ModuleAuthor => "K4ryuu";
 
 		public required PluginConfig Config { get; set; } = new PluginConfig();
@@ -349,6 +349,8 @@ namespace K4ryuuDamageInfo
 				if (!printed)
 					player.PrintToChat($" {Localizer["phrases.summary.startline"]}");
 
+				printed = true;
+
 				DamageInfo givenDamageInfo = entry.Value;
 				DamageInfo takenDamageInfo = playerInfo.TakenDamage.ContainsKey(otherPlayerId) ? playerInfo.TakenDamage[otherPlayerId] : new DamageInfo();
 				processedPlayers.Add(otherPlayerId);
@@ -371,6 +373,8 @@ namespace K4ryuuDamageInfo
 
 				if (!printed)
 					player.PrintToChat($" {Localizer["phrases.summary.startline"]}");
+
+				printed = true;
 
 				DamageInfo takenDamageInfo = entry.Value;
 				DamageInfo givenDamageInfo = new DamageInfo();

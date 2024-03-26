@@ -1,4 +1,8 @@
--- 2024.03.23 - V2.3.0
+-- 2024.03.26 - V2.3.1
+
+- fix: Start/End line problems
+
+-- 2024.03.24 - V2.3.0
 
 - feat: Show only killer damage info setting (DM FFA)
 - feat: Show team damage info setting

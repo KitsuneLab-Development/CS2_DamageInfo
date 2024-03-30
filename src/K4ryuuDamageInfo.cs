@@ -57,7 +57,7 @@ namespace K4ryuuDamageInfo
 	public class DamageInfoPlugin : BasePlugin, IPluginConfig<PluginConfig>
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "2.3.1";
+		public override string ModuleVersion => "2.3.2";
 		public override string ModuleAuthor => "K4ryuu";
 
 		public required PluginConfig Config { get; set; } = new PluginConfig();
@@ -292,14 +292,23 @@ namespace K4ryuuDamageInfo
 					if (Config.ShowAllDamagesTeamOnly && otherPlayer.TeamNum == player.TeamNum)
 						continue;
 
-					string otherPlayerHealth = otherPlayer.PlayerPawn.Value!.Health > 0
-											   ? $"{otherPlayer.PlayerPawn.Value!.Health}HP"
+					int otherPlayerHealth = 0;
+					string otherPlayerName = "Unknown";
+
+					if (otherPlayer?.IsValid == true)
+					{
+						otherPlayerName = otherPlayer.PlayerName;
+						otherPlayerHealth = otherPlayer.PlayerPawn?.IsValid == true && otherPlayer.Connected == PlayerConnectedState.PlayerConnected ? otherPlayer.PlayerPawn.Value?.Health ?? 0 : 0;
+					}
+
+					string otherPlayerHealthString = otherPlayerHealth > 0
+											   ? $"{otherPlayerHealth}HP"
 											   : $"{Localizer["phrases.dead"]}";
 
 					player.PrintToChat($" {Localizer["phrases.summary.dataline",
 						summary.Value.taken.TotalDamage, summary.Value.taken.Hits,
 						summary.Value.given.TotalDamage, summary.Value.given.Hits,
-						otherPlayer.PlayerName, otherPlayerHealth]}");
+						otherPlayerName, otherPlayerHealthString]}");
 				}
 
 				player.PrintToChat($" {Localizer["phrases.summary.endline"]}");
@@ -355,10 +364,18 @@ namespace K4ryuuDamageInfo
 				DamageInfo takenDamageInfo = playerInfo.TakenDamage.ContainsKey(otherPlayerId) ? playerInfo.TakenDamage[otherPlayerId] : new DamageInfo();
 				processedPlayers.Add(otherPlayerId);
 
-				CCSPlayerController otherPlayer = Utilities.GetPlayerFromSlot(otherPlayerId);
-				int otherPlayerHealth = otherPlayer.PlayerPawn.Value!.Health;
+				int otherPlayerHealth = 0;
+				string otherPlayerName = "Unknown";
 
-				player.PrintToChat($" {Localizer["phrases.summary.dataline", givenDamageInfo.TotalDamage, givenDamageInfo.Hits, takenDamageInfo.TotalDamage, takenDamageInfo.Hits, otherPlayer.PlayerName, otherPlayerHealth > 0 ? $"{otherPlayerHealth}HP" : $"{Localizer["phrases.dead"]}"]}");
+				CCSPlayerController otherPlayer = Utilities.GetPlayerFromSlot(otherPlayerId);
+
+				if (otherPlayer?.IsValid == true)
+				{
+					otherPlayerName = otherPlayer.PlayerName;
+					otherPlayerHealth = otherPlayer.PlayerPawn?.IsValid == true && otherPlayer.Connected == PlayerConnectedState.PlayerConnected ? otherPlayer.PlayerPawn.Value?.Health ?? 0 : 0;
+				}
+
+				player.PrintToChat($" {Localizer["phrases.summary.dataline", givenDamageInfo.TotalDamage, givenDamageInfo.Hits, takenDamageInfo.TotalDamage, takenDamageInfo.Hits, otherPlayerName, otherPlayerHealth > 0 ? $"{otherPlayerHealth}HP" : $"{Localizer["phrases.dead"]}"]}");
 			}
 
 			foreach (KeyValuePair<int, DamageInfo> entry in playerInfo.TakenDamage)
@@ -379,11 +396,18 @@ namespace K4ryuuDamageInfo
 				DamageInfo takenDamageInfo = entry.Value;
 				DamageInfo givenDamageInfo = new DamageInfo();
 
+				int otherPlayerHealth = 0;
+				string otherPlayerName = "Unknown";
+
 				CCSPlayerController otherPlayer = Utilities.GetPlayerFromSlot(otherPlayerId);
 
-				int otherPlayerHealth = otherPlayer.PlayerPawn.Value!.Health;
+				if (otherPlayer?.IsValid == true)
+				{
+					otherPlayerName = otherPlayer.PlayerName;
+					otherPlayerHealth = otherPlayer.PlayerPawn?.IsValid == true && otherPlayer.Connected == PlayerConnectedState.PlayerConnected ? otherPlayer.PlayerPawn.Value?.Health ?? 0 : 0;
+				}
 
-				player.PrintToChat($" {Localizer["phrases.summary.dataline", givenDamageInfo.TotalDamage, givenDamageInfo.Hits, takenDamageInfo.TotalDamage, takenDamageInfo.Hits, otherPlayer.PlayerName, otherPlayerHealth > 0 ? $"{otherPlayerHealth}HP" : $"{Localizer["phrases.dead"]}"]}");
+				player.PrintToChat($" {Localizer["phrases.summary.dataline", givenDamageInfo.TotalDamage, givenDamageInfo.Hits, takenDamageInfo.TotalDamage, takenDamageInfo.Hits, otherPlayerName, otherPlayerHealth > 0 ? $"{otherPlayerHealth}HP" : $"{Localizer["phrases.dead"]}"]}");
 			}
 
 			if (printed)

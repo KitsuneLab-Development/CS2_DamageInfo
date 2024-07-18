@@ -1,12 +1,12 @@
 <a name="readme-top"></a>
 
-![GitHub tag (with filter)](https://img.shields.io/github/v/tag/K4ryuu/CS2_DamageInfo?style=for-the-badge&label=Version)
-![GitHub Repo stars](https://img.shields.io/github/stars/K4ryuu/CS2_DamageInfo?style=for-the-badge)
-![GitHub issues](https://img.shields.io/github/issues/K4ryuu/CS2_DamageInfo?style=for-the-badge)
-![GitHub](https://img.shields.io/github/license/K4ryuu/CS2_DamageInfo?style=for-the-badge)
-![GitHub contributors](https://img.shields.io/github/contributors/K4ryuu/CS2_DamageInfo?style=for-the-badge)
-![GitHub all releases](https://img.shields.io/github/downloads/K4ryuu/CS2_DamageInfo/total?style=for-the-badge)
-![GitHub last commit (branch)](https://img.shields.io/github/last-commit/K4ryuu/CS2_DamageInfo/dev?style=for-the-badge)
+![GitHub tag (with filter)](https://img.shields.io/github/v/tag/KitsuneLab-Development/CS2_DamageInfo?style=for-the-badge&label=Version)
+![GitHub Repo stars](https://img.shields.io/github/stars/KitsuneLab-Development/CS2_DamageInfo?style=for-the-badge)
+![GitHub issues](https://img.shields.io/github/issues/KitsuneLab-Development/CS2_DamageInfo?style=for-the-badge)
+![GitHub](https://img.shields.io/github/license/KitsuneLab-Development/CS2_DamageInfo?style=for-the-badge)
+![GitHub contributors](https://img.shields.io/github/contributors/KitsuneLab-Development/CS2_DamageInfo?style=for-the-badge)
+![GitHub all releases](https://img.shields.io/github/downloads/KitsuneLab-Development/CS2_DamageInfo/total?style=for-the-badge)
+![GitHub last commit (branch)](https://img.shields.io/github/last-commit/KitsuneLab-Development/CS2_DamageInfo/dev?style=for-the-badge)
 
 <!-- PROJECT LOGO -->
 <br />
@@ -18,11 +18,11 @@
     An awesome CS2 server addon created with <a href="https://github.com/roflmuffin/CounterStrikeSharp"><strong>CounterStrikeSharp</strong></a>
     <br />
     <br />
-    <a href="https://github.com/K4ryuu/CS2_DamageInfo/releases">Download</a>
+    <a href="https://github.com/KitsuneLab-Development/CS2_DamageInfo/releases">Download</a>
     ·
-    <a href="https://github.com/K4ryuu/CS2_DamageInfo/issues/new?assignees=K4ryuu&labels=bug&projects=&template=bug_report.md&title=%5BBUG%5D">Report Bug</a>
+    <a href="https://github.com/KitsuneLab-Development/CS2_DamageInfo/issues/new?assignees=K4ryuu&labels=bug&projects=&template=bug_report.md&title=%5BBUG%5D">Report Bug</a>
     ·
-    <a href="https://github.com/K4ryuu/CS2_DamageInfo/issues/new?assignees=K4ryuu&labels=enhancement&projects=&template=feature_request.md&title=%5BREQ%5D">Request Feature</a>
+    <a href="https://github.com/KitsuneLab-Development/CS2_DamageInfo/issues/new?assignees=K4ryuu&labels=enhancement&projects=&template=feature_request.md&title=%5BREQ%5D">Request Feature</a>
   </p>
 </div>
 
@@ -110,11 +110,11 @@ Before you begin, ensure you have the following prerequisites:
 
 ### Installation
 
-1. **Download the Addon:** Start by downloading the addon from the [GitHub Releases Page](https://github.com/K4ryuu/CS2_DamageInfo/releases). Choose the latest release version.
+1. **Download the Addon:** Start by downloading the addon from the [GitHub Releases Page](https://github.com/KitsuneLab-Development/CS2_DamageInfo/releases). Choose the latest release version.
 
 2. **Extract the Addon:** After downloading, extract the contents of the addon to the counterstrikesharp/plugins directory on your server. Inside the plugins folder, you should have a folder named exactly as the project dll. From the releases, you find it pre zipped with the correct name.
 
-3. **Configuration:** The configuration file (if there is any), will be generated automatically to counterstrikesharp/configs/plugins/*
+3. **Configuration:** The configuration file (if there is any), will be generated automatically to counterstrikesharp/configs/plugins/\*
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

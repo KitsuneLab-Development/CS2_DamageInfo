@@ -43,26 +43,6 @@ To use this server addon, you'll need the following dependencies installed:
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- Modules -->
-
-## Modules
-
-All listed modules can be found within the modules folder:
-
-- **Health**: Extra health skill
-- **Armor**: Extra armor skill
-- **Health Regeneration**: Health regeneration skill
-- **Armor Regeneration**: Armor regeneration skill
-- **Shot Damage Multiplier (Linux Only)**: Damage multiplier skill for shots
-- **Knife Damage Multiplier (Linux Only)**: Damage multiplier skill for knife damages
-- **Thorns (Reflect damage)**: Damage reflect skill
-- **Vampire (Steal health)**: Health steal skill
-- **Nade King**: Spawn grenade kits per level
-- **Backstab Freeze (Linux Only)**: Chance based freeze on backstab of an enemy
-- **Speed**: Additional speed on every round
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 <!-- ROADMAP -->
 
 ## Roadmap

@@ -57,7 +57,7 @@ namespace K4ryuuDamageInfo
 	public class DamageInfoPlugin : BasePlugin, IPluginConfig<PluginConfig>
 	{
 		public override string ModuleName => "Damage Info";
-		public override string ModuleVersion => "2.3.2";
+		public override string ModuleVersion => "2.3.3";
 		public override string ModuleAuthor => "K4ryuu";
 
 		public required PluginConfig Config { get; set; } = new PluginConfig();
@@ -85,10 +85,10 @@ namespace K4ryuuDamageInfo
 
 			RegisterListener<Listeners.OnMapStart>(OnMapStart);
 
-			OnMapStart("");
+			OnMapStart();
 		}
 
-		private void OnMapStart(string mapName)
+		private void OnMapStart(string? mapName = null)
 		{
 			AddTimer(1.0f, () =>
 			{
@@ -98,24 +98,11 @@ namespace K4ryuuDamageInfo
 
 		private HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
 		{
-			CCSPlayerController player = @event.Userid;
-
+			CCSPlayerController? player = @event.Userid;
 			if (player is null || !player.IsValid || !player.PlayerPawn.IsValid)
 				return HookResult.Continue;
 
 			IsDataShown[player.Slot] = false;
-			return HookResult.Continue;
-		}
-
-		private HookResult OnPlayerDeath(EventPlayerConnectFull @event, GameEventInfo info)
-		{
-			CCSPlayerController player = @event.Userid;
-
-			if (player is null || !player.IsValid)
-				return HookResult.Continue;
-
-			IsDataShown[player.Slot] = false;
-			VictimKiller[player.Slot] = -1;
 			return HookResult.Continue;
 		}
 
@@ -127,11 +114,11 @@ namespace K4ryuuDamageInfo
 			if (!Config.AlowDeathPrint)
 				return HookResult.Continue;
 
-			CCSPlayerController victim = @event.Userid;
+			CCSPlayerController? victim = @event.Userid;
 			if (victim is null || !victim.IsValid || !victim.PlayerPawn.IsValid || victim.Connected == PlayerConnectedState.PlayerDisconnecting)
 				return HookResult.Continue;
 
-			CCSPlayerController attacker = @event.Attacker;
+			CCSPlayerController? attacker = @event.Attacker;
 			VictimKiller[victim.Slot] = attacker?.IsValid == true && attacker.PlayerPawn?.IsValid == true ? attacker.Slot : -1;
 
 			DisplayDamageInfo(victim);
@@ -150,13 +137,11 @@ namespace K4ryuuDamageInfo
 
 		private HookResult OnPlayerHurt(EventPlayerHurt @event, GameEventInfo info)
 		{
-			CCSPlayerController victim = @event.Userid;
-
+			CCSPlayerController? victim = @event.Userid;
 			if (victim is null || !victim.IsValid || !victim.PlayerPawn.IsValid)
 				return HookResult.Continue;
 
-			CCSPlayerController attacker = @event.Attacker;
-
+			CCSPlayerController? attacker = @event.Attacker;
 			if (attacker is null || !attacker.IsValid || !attacker.PlayerPawn.IsValid)
 				return HookResult.Continue;
 
@@ -287,9 +272,8 @@ namespace K4ryuuDamageInfo
 
 				foreach (var summary in allPlayerSummaries)
 				{
-					CCSPlayerController otherPlayer = Utilities.GetPlayerFromSlot(summary.Key);
-
-					if (Config.ShowAllDamagesTeamOnly && otherPlayer.TeamNum == player.TeamNum)
+					CCSPlayerController? otherPlayer = Utilities.GetPlayerFromSlot(summary.Key);
+					if (Config.ShowAllDamagesTeamOnly && otherPlayer?.TeamNum == player.TeamNum)
 						continue;
 
 					int otherPlayerHealth = 0;
@@ -367,8 +351,7 @@ namespace K4ryuuDamageInfo
 				int otherPlayerHealth = 0;
 				string otherPlayerName = "Unknown";
 
-				CCSPlayerController otherPlayer = Utilities.GetPlayerFromSlot(otherPlayerId);
-
+				CCSPlayerController? otherPlayer = Utilities.GetPlayerFromSlot(otherPlayerId);
 				if (otherPlayer?.IsValid == true)
 				{
 					otherPlayerName = otherPlayer.PlayerName;
@@ -399,8 +382,7 @@ namespace K4ryuuDamageInfo
 				int otherPlayerHealth = 0;
 				string otherPlayerName = "Unknown";
 
-				CCSPlayerController otherPlayer = Utilities.GetPlayerFromSlot(otherPlayerId);
-
+				CCSPlayerController? otherPlayer = Utilities.GetPlayerFromSlot(otherPlayerId);
 				if (otherPlayer?.IsValid == true)
 				{
 					otherPlayerName = otherPlayer.PlayerName;

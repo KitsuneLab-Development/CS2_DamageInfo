@@ -1,3 +1,9 @@
+-- 2024.07.24 - V2.3.3
+
+- upgrade: update to NET8.0 from NET7.0
+- fix: remove duplicated event hook
+- chore: upgrade README.md to use the team standards
+
 -- 2024.03.30 - V2.3.2
 
 fix: Schema target points to null

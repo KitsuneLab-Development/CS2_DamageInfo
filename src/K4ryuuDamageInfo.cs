@@ -53,12 +53,12 @@ namespace K4ryuuDamageInfo
 		public override int Version { get; set; } = 4;
 	}
 
-	[MinimumApiVersion(153)]
+	[MinimumApiVersion(244)]
 	public class DamageInfoPlugin : BasePlugin, IPluginConfig<PluginConfig>
 	{
-		public override string ModuleName => "Damage Info";
+		public override string ModuleName => "Damage Informations";
 		public override string ModuleVersion => "2.3.3";
-		public override string ModuleAuthor => "K4ryuu";
+		public override string ModuleAuthor => "K4ryuu @ KitsuneLab";
 
 		public required PluginConfig Config { get; set; } = new PluginConfig();
 		public CCSGameRules? GameRules;
@@ -68,9 +68,7 @@ namespace K4ryuuDamageInfo
 		public void OnConfigParsed(PluginConfig config)
 		{
 			if (config.Version < Config.Version)
-			{
 				base.Logger.LogWarning("Configuration version mismatch (Expected: {0} | Current: {1})", this.Config.Version, config.Version);
-			}
 
 			this.Config = config;
 		}

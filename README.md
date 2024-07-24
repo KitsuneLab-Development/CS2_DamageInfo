@@ -1,22 +1,3 @@
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- LICENSE -->
-
-## License
-
-Distributed under the GPL-3.0 License. See `LICENSE.md` for more information.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- CONTACT -->
-
-## Contact
-
-- **Discord:** [Discord Server](https://discord.gg/peBZpwgMHb)
-- **Email:** k4ryuu@icloud.com
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 <a name="readme-top"></a>
 
 ![GitHub tag (with filter)](https://img.shields.io/github/v/tag/KitsuneLab-Development/CS2_DamageInfo?style=for-the-badge&label=Version)

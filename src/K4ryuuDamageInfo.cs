@@ -46,7 +46,7 @@ namespace K4ryuuDamageInfo
 			"@myplugin/can-see-permission",
 			"#myplugin/can-see-group",
 			"can-see-override",
-			"leave-empty-so-let-everyone-see"
+			"leave-empty-so-everyone-see-it"
 		};
 
 		[JsonPropertyName("ConfigVersion")]
@@ -57,13 +57,13 @@ namespace K4ryuuDamageInfo
 	public class DamageInfoPlugin : BasePlugin, IPluginConfig<PluginConfig>
 	{
 		public override string ModuleName => "Damage Informations";
-		public override string ModuleVersion => "2.3.3";
+		public override string ModuleVersion => "2.3.4";
 		public override string ModuleAuthor => "K4ryuu @ KitsuneLab";
 
 		public required PluginConfig Config { get; set; } = new PluginConfig();
 		public CCSGameRules? GameRules;
-		private bool[] IsDataShown = new bool[65];
-		private int[] VictimKiller = new int[65];
+		private readonly bool[] IsDataShown = new bool[65];
+		private readonly int[] VictimKiller = new int[65];
 
 		public void OnConfigParsed(PluginConfig config)
 		{
@@ -123,11 +123,11 @@ namespace K4ryuuDamageInfo
 
 			if (Config.NoRoundsMode)
 			{
-				if (!playerDamageInfos.ContainsKey(victim.Slot) || playerDamageInfos[victim.Slot] is null)
+				if (!playerDamageInfos.TryGetValue(victim.Slot, out PlayerDamageInfo? value) || value is null)
 					return HookResult.Continue;
 
-				playerDamageInfos[victim.Slot].GivenDamage.Clear();
-				playerDamageInfos[victim.Slot].TakenDamage.Clear();
+				value.GivenDamage.Clear();
+				value.TakenDamage.Clear();
 			}
 
 			return HookResult.Continue;
@@ -166,7 +166,7 @@ namespace K4ryuuDamageInfo
 
 					if (!recentDamages.ContainsKey(attacker.Slot))
 					{
-						recentDamages[attacker.Slot] = new Dictionary<int, RecentDamage>();
+						recentDamages[attacker.Slot] = [];
 					}
 
 					if (!recentDamages[attacker.Slot].TryGetValue(victim.Slot, out RecentDamage? recentDamage))
@@ -254,7 +254,7 @@ namespace K4ryuuDamageInfo
 
 			if (Config.ShowAllDamages)
 			{
-				Dictionary<int, (DamageInfo given, DamageInfo taken)>? allPlayerSummaries = new Dictionary<int, (DamageInfo given, DamageInfo taken)>();
+				Dictionary<int, (DamageInfo given, DamageInfo taken)>? allPlayerSummaries = [];
 
 				IsDataShown[player.Slot] = true;
 
@@ -297,15 +297,15 @@ namespace K4ryuuDamageInfo
 			}
 			else
 			{
-				if (!playerDamageInfos.ContainsKey(player.Slot) || playerDamageInfos[player.Slot] is null)
+				if (!playerDamageInfos.TryGetValue(player.Slot, out PlayerDamageInfo? value) || value is null)
 					return;
 
 				IsDataShown[player.Slot] = true;
-				DisplayPlayerDamageInfo(player, playerDamageInfos[player.Slot]);
+				DisplayPlayerDamageInfo(player, value);
 			}
 		}
 
-		private (DamageInfo given, DamageInfo taken) SummarizePlayerDamage(PlayerDamageInfo playerInfo)
+		private static (DamageInfo given, DamageInfo taken) SummarizePlayerDamage(PlayerDamageInfo playerInfo)
 		{
 			DamageInfo totalGivenDamage = new DamageInfo();
 			DamageInfo totalTakenDamage = new DamageInfo();
@@ -343,7 +343,7 @@ namespace K4ryuuDamageInfo
 				printed = true;
 
 				DamageInfo givenDamageInfo = entry.Value;
-				DamageInfo takenDamageInfo = playerInfo.TakenDamage.ContainsKey(otherPlayerId) ? playerInfo.TakenDamage[otherPlayerId] : new DamageInfo();
+				DamageInfo takenDamageInfo = playerInfo.TakenDamage.TryGetValue(otherPlayerId, out DamageInfo? value) ? value : new DamageInfo();
 				processedPlayers.Add(otherPlayerId);
 
 				int otherPlayerHealth = 0;
@@ -394,12 +394,12 @@ namespace K4ryuuDamageInfo
 				player.PrintToChat($" {Localizer["phrases.summary.endline"]}");
 		}
 
-		private Dictionary<int, PlayerDamageInfo> playerDamageInfos = new Dictionary<int, PlayerDamageInfo>();
+		private readonly Dictionary<int, PlayerDamageInfo> playerDamageInfos = new Dictionary<int, PlayerDamageInfo>();
 
 		private class PlayerDamageInfo
 		{
-			public Dictionary<int, DamageInfo> GivenDamage = new Dictionary<int, DamageInfo>();
-			public Dictionary<int, DamageInfo> TakenDamage = new Dictionary<int, DamageInfo>();
+			public Dictionary<int, DamageInfo> GivenDamage = [];
+			public Dictionary<int, DamageInfo> TakenDamage = [];
 		}
 
 		private class DamageInfo
@@ -408,7 +408,7 @@ namespace K4ryuuDamageInfo
 			public int Hits = 0;
 		}
 
-		private Dictionary<int, Dictionary<int, RecentDamage>> recentDamages = new Dictionary<int, Dictionary<int, RecentDamage>>();
+		private readonly Dictionary<int, Dictionary<int, RecentDamage>> recentDamages = [];
 
 		private class RecentDamage
 		{

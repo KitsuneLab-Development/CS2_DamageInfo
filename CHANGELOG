@@ -1,3 +1,8 @@
+-- 2024.10.08 - V2.3.4
+
+- uprade: Optimised and simplified some parts a little bit
+- fix: Errors after CS2 update
+
 -- 2024.07.24 - V2.3.3
 
 - upgrade: update to NET8.0 from NET7.0

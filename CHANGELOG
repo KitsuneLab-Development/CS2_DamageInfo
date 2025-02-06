@@ -4,6 +4,7 @@
 - feat: Implemented CenterHTML for enhanced colored text display
 - chore: Complete rewrite of the plugin for better maintainability and performance
 - chore: Reworked core functionality and architecture
+- remove: Some useless option
 
 -- 2024.10.08 - V2.3.4
 

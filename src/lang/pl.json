@@ -1,0 +1,19 @@
+{
+  "phrases.summary.startline": "▬▬▬▬▬▬▬▬▬▬▬▬▬ Statystyki ▬▬▬▬▬▬▬▬▬▬▬▬▬",
+  "phrases.summary.dataline": "{lime}➜ {white}Dla: [{lime}{0} / {1} trafień{white}] Od: [{lightred}{2} / {3} trafień{white}] - {4} [{lightred}{5}{white}]",
+  "phrases.summary.endline": "▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬",
+  "phrases.console.normal": "Obrażenia zadane: {0} | HP {1} | Pancerz {2} | Trafiona część ciała: {3}",
+  "phrases.console.inverse": "Obrażenia otrzymane od: {0} | HP {1} | Pancerz {2} | Trafiona część ciała: {3}",
+  "phrases.dead": "MARTWY",
+  "phrases.hitgroup.0": "Ciało",
+  "phrases.hitgroup.1": "Głowa",
+  "phrases.hitgroup.2": "Klatka piersiowa",
+  "phrases.hitgroup.3": "Brzuch",
+  "phrases.hitgroup.4": "Lewe ramię",
+  "phrases.hitgroup.5": "Prawe ramię",
+  "phrases.hitgroup.6": "Lewa noga",
+  "phrases.hitgroup.7": "Prawa noga",
+  "phrases.hitgroup.10": "W biegu",
+  "phrases.hitgroup._": "Nieznane",
+  "phrases.center.html": "<font color=\"#FFA500\">Zadane obrażenia</font><br><font color=\"#00BFFF\">{1:D3}</font><font color=\"#FFFFFF\"> | </font><font color=\"#FF0000\">{2:D3}</font><br><font color=\"#FFA500\">{0}</font>"
+}
